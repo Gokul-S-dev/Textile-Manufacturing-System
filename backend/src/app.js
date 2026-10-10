@@ -22,6 +22,13 @@ const swaggerDocument = YAML.load(path.join(__dirname, 'docs', 'swagger.yaml'));
 // Swagger Documentation Route
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+import { errorHandler } from './middleware/errorHandler.js';
+import pinoHttp from 'pino-http';
+import { logger } from './utils/logger.js';
+
+// Setup HTTP request logging
+app.use(pinoHttp({ logger }));
+
 // Basic Health Check Route
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'API is running successfully' });
@@ -32,9 +39,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/inventory', inventoryRoutes);
 
 // Global Error Handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Internal Server Error', error: process.env.NODE_ENV === 'development' ? err.message : undefined });
-});
+app.use(errorHandler);
 
 export default app;
