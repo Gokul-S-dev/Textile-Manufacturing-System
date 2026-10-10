@@ -149,21 +149,36 @@ export const processMovement = async (data, userId) => {
 // -----------------------------------------------------------------------------
 export const createReservation = async (data, userId) => {
   return await prisma.$transaction(async (tx) => {
-    // Simplified logic: finds generic balance (no batch specified)
+    // Attempt optimistic concurrency update to prevent race conditions
+    // We only update if (quantity - reservedQuantity) >= data.quantity
+    
+    // 1. Find a valid balance row
     const balance = await tx.inventoryBalance.findFirst({
-      where: { itemId: data.itemId, warehouseId: data.warehouseId, batchId: null }
+      where: { 
+        itemId: data.itemId, 
+        warehouseId: data.warehouseId 
+      }
     });
 
-    if (!balance || Number(balance.quantity) - Number(balance.reservedQuantity) < data.quantity) {
-      throw new Error('Insufficient unreserved physical stock for reservation');
+    if (!balance) throw { status: 404, message: 'No stock found in this warehouse' };
+
+    // 2. Perform atomic update where the condition is strictly enforced
+    const updatedBalance = await tx.inventoryBalance.updateMany({
+      where: {
+        id: balance.id,
+        quantity: { gte: Number(balance.reservedQuantity) + data.quantity }
+      },
+      data: {
+        reservedQuantity: { increment: data.quantity }
+      }
+    });
+
+    if (updatedBalance.count === 0) {
+      throw { status: 409, message: 'Insufficient unreserved physical stock for reservation (Concurrency conflict)' };
     }
 
-    await tx.inventoryBalance.update({
-      where: { id: balance.id },
-      data: { reservedQuantity: Number(balance.reservedQuantity) + data.quantity }
-    });
-
-    return await tx.materialReservation.create({
+    // 3. Record reservation
+    const reservation = await tx.materialReservation.create({
       data: {
         itemId: data.itemId,
         warehouseId: data.warehouseId,
@@ -172,6 +187,8 @@ export const createReservation = async (data, userId) => {
         createdBy: userId
       }
     });
+
+    return reservation;
   });
 };
 

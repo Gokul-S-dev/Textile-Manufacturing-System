@@ -13,6 +13,9 @@ app.use(express.urlencoded({ extended: true }));
 import authRoutes from './modules/auth/auth.routes.js';
 import inventoryRoutes from './modules/inventory/inventory.routes.js';
 import usersRoutes from './modules/users/users.routes.js';
+import purchasingRoutes from './modules/purchasing/purchasing.routes.js';
+import machinesRoutes from './modules/machines/machines.routes.js';
+import workforceRoutes from './modules/workforce/workforce.routes.js';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import path from 'path';
@@ -52,6 +55,10 @@ app.get('/api/v1/health/ready', async (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', usersRoutes);
 app.use('/api/v1/inventory', inventoryRoutes);
+app.use('/api/v1/purchasing', purchasingRoutes);
+app.use('/api/v1/machines', machinesRoutes);
+app.use('/api/v1/workforce', workforceRoutes);
+
 
 // Global Error Handler
 app.use(errorHandler);

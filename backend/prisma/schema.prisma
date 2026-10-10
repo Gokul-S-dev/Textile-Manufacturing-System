@@ -331,6 +331,7 @@ model Machine {
 
   maintenanceRecords MaintenanceRecord[]
   productionRuns     ProductionRun[]
+  capabilities       MachineCapability[]
 }
 
 model MaintenanceRecord {
@@ -358,6 +359,7 @@ model Employee {
   
   assignments  WorkerAssignment[]
   inspections  QualityInspection[]
+  attendances  Attendance[]
 }
 
 model WorkerAssignment {
@@ -532,4 +534,43 @@ model CostEntry {
   amount      Decimal  @db.Decimal(12, 2)
   category    String   // MATERIAL, LABOUR, OVERHEAD
   timestamp   DateTime @default(now())
+}
+
+// ============================================================================
+// PHASE 5: ADDITIONAL MODELS
+// ============================================================================
+
+model Shift {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  startTime String   // e.g., "08:00"
+  endTime   String   // e.g., "16:00"
+  isActive  Boolean  @default(true)
+  
+  attendances Attendance[]
+}
+
+model Attendance {
+  id         String   @id @default(uuid())
+  employeeId String
+  shiftId    String
+  date       DateTime @db.Date
+  checkIn    DateTime
+  checkOut   DateTime?
+  status     String   @default("PRESENT")
+  
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  shift      Shift    @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+  
+  @@unique([employeeId, shiftId, date])
+}
+
+model MachineCapability {
+  id          String  @id @default(uuid())
+  machineId   String
+  stage       Stage
+  fabricSpec  String
+  
+  machine     Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 }
