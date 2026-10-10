@@ -15,10 +15,7 @@ export const productionService = {
         fabricSpec,
         targetQuantity,
         dueDate: new Date(dueDate),
-        routeId,
-        customerOrderId,
-        priority: priority || 3,
-        color
+        customerOrderId
       }
     });
   },
@@ -29,7 +26,6 @@ export const productionService = {
     return prisma.manufacturingOrder.findMany({
       where,
       include: {
-        route: true,
         shortages: true
       },
       orderBy: { createdAt: 'desc' }
@@ -40,9 +36,6 @@ export const productionService = {
     return prisma.manufacturingOrder.findUnique({
       where: { id },
       include: {
-        route: {
-          include: { stages: { orderBy: { sequence: 'asc' } } }
-        },
         shortages: {
           include: { material: true }
         },

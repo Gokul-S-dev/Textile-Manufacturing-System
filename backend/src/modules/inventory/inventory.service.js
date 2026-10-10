@@ -52,13 +52,11 @@ export const recordReceipt = async (data, userId) => {
     }
 
     // Get or create balance
-    let balance = await tx.inventoryBalance.findUnique({
+    let balance = await tx.inventoryBalance.findFirst({
       where: {
-        itemId_warehouseId_batchId: {
-          itemId: data.itemId,
-          warehouseId: data.warehouseId,
-          batchId: batch.id
-        }
+        itemId: data.itemId,
+        warehouseId: data.warehouseId,
+        batchId: batch.id
       }
     });
 

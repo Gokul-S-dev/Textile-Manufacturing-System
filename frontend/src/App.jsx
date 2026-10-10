@@ -20,7 +20,10 @@ import AuditLogPage from './pages/AuditLogPage';
 import SettingsPage from './pages/SettingsPage';
 import MesExecutionPage from './pages/MesExecutionPage';
 import WarehousePage from './pages/WarehousePage';
-
+import SalesOrdersPage from './pages/SalesOrdersPage';
+import FinancePage from './pages/FinancePage';
+import NotificationsPage from './pages/NotificationsPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuthStore();
   if (!isAuthenticated) {
@@ -61,6 +64,8 @@ export default function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="orders" element={<RoleRoute allowedRoles={['PRODUCTION_MANAGER']}><OrdersPage /></RoleRoute>} />
+          <Route path="sales" element={<RoleRoute allowedRoles={['STORE_MANAGER', 'ADMIN']}><SalesOrdersPage /></RoleRoute>} />
+          <Route path="finance" element={<RoleRoute allowedRoles={['ADMIN']}><FinancePage /></RoleRoute>} />
           <Route path="inventory" element={<RoleRoute allowedRoles={['INVENTORY_MANAGER', 'STORE_MANAGER']}><InventoryPage /></RoleRoute>} />
           <Route path="warehouse" element={<RoleRoute allowedRoles={['STORE_MANAGER', 'ADMIN']}><WarehousePage /></RoleRoute>} />
           <Route path="production" element={<RoleRoute allowedRoles={['PRODUCTION_MANAGER']}><ProductionPage /></RoleRoute>} />
@@ -73,6 +78,8 @@ export default function App() {
           <Route path="finance" element={<RoleRoute allowedRoles={['ACCOUNTANT', 'PRODUCTION_MANAGER']}><FinancePage /></RoleRoute>} />
           <Route path="traceability" element={<TraceabilityPage />} />
           <Route path="audit-log" element={<AuditLogPage />} />
+          <Route path="notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+          <Route path="analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 

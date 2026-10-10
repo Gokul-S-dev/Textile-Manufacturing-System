@@ -17,6 +17,8 @@ export const createUser = async (data, actorId) => {
     const roles = await tx.role.findMany({ where: { name: { in: data.roles } } });
     if (roles.length !== data.roles.length) throw { status: 400, message: 'One or more roles invalid' };
 
+
+
     const user = await tx.user.create({
       data: {
         email: data.email,

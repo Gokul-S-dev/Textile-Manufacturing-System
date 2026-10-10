@@ -1,3 +1,4 @@
+import { startNotificationWorker } from './modules/notifications/notification.worker.js';
 import './config/env.js'; // This executes the Zod validation immediately
 import app from './app.js';
 import { connectDB } from './config/db.js';
@@ -7,6 +8,7 @@ import { logger } from './utils/logger.js';
 const startServer = async () => {
   try {
     await connectDB();
+    startNotificationWorker();
     logger.info('✅ PostgreSQL connected via Prisma');
     
     app.listen(env.PORT, () => {

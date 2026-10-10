@@ -20,6 +20,11 @@ import productionRoutes from './modules/production/production.routes.js';
 import mesRoutes from './modules/mes/mes.routes.js';
 import qualityRoutes from './modules/quality/quality.routes.js';
 import warehouseRoutes from './modules/warehouse/warehouse.routes.js';
+import salesRoutes from './modules/sales/sales.routes.js';
+import financeRoutes from './modules/finance/finance.routes.js';
+import notificationsRoutes from './modules/notifications/notifications.routes.js';
+import analyticsRoutes from './modules/analytics/analytics.routes.js';
+import { startNotificationWorker } from './modules/notifications/notification.worker.js';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import path from 'path';
@@ -66,6 +71,10 @@ app.use('/api/v1/production', productionRoutes);
 app.use('/api/v1/mes', mesRoutes);
 app.use('/api/v1/quality', qualityRoutes);
 app.use('/api/v1/warehouse', warehouseRoutes);
+app.use('/api/v1/sales', salesRoutes);
+app.use('/api/v1/finance', financeRoutes);
+app.use('/api/v1/notifications', notificationsRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
 // Global Error Handler
 app.use(errorHandler);
 

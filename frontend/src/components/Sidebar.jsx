@@ -19,6 +19,7 @@ import {
   History,
   Settings,
   ShieldCheck,
+  BarChart2
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
