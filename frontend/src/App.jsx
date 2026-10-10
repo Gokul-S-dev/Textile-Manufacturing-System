@@ -1,41 +1,67 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuthStore } from './store/useAuthStore';
+import AppLayout from './layouts/AppLayout';
 
-function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="text-center p-8 max-w-2xl bg-white rounded-2xl shadow-xl">
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl">
-            🏭
-          </div>
-        </div>
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-4">
-          Textile Manufacturing System
-        </h1>
-        <p className="text-lg leading-8 text-gray-600 mb-8">
-          Frontend structure initialized with React Router, Zustand, Axios, and Tailwind CSS v4.
-        </p>
-        <div className="flex items-center justify-center gap-x-6">
-          <button className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
-            View Dashboard
-          </button>
-          <button className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600 transition-colors">
-            Documentation <span aria-hidden="true">→</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+// Pages
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import OrdersPage from './pages/OrdersPage';
+import InventoryPage from './pages/InventoryPage';
+import ProductionPage from './pages/ProductionPage';
+import MachinesPage from './pages/MachinesPage';
+import WorkersPage from './pages/WorkersPage';
+import QualityPage from './pages/QualityPage';
+import DispatchPage from './pages/DispatchPage';
+import BuyerPortalPage from './pages/BuyerPortalPage';
+import FinancePage from './pages/FinancePage';
+import TraceabilityPage from './pages/TraceabilityPage';
+import AuditLogPage from './pages/AuditLogPage';
+import SettingsPage from './pages/SettingsPage';
+
+function ProtectedRoute({ children }) {
+  const { isAuthenticated } = useAuthStore();
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
 }
 
-function App() {
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
+        {/* Public Routes */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Protected ERP Application Routes */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="orders" element={<OrdersPage />} />
+          <Route path="inventory" element={<InventoryPage />} />
+          <Route path="production" element={<ProductionPage />} />
+          <Route path="machines" element={<MachinesPage />} />
+          <Route path="workers" element={<WorkersPage />} />
+          <Route path="quality" element={<QualityPage />} />
+          <Route path="dispatch" element={<DispatchPage />} />
+          <Route path="buyer-portal" element={<BuyerPortalPage />} />
+          <Route path="finance" element={<FinancePage />} />
+          <Route path="traceability" element={<TraceabilityPage />} />
+          <Route path="audit-log" element={<AuditLogPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );
 }
-
-export default App;
