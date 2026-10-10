@@ -37,7 +37,7 @@ components:
       properties:
         message:
           type: string
-          example: Invalid email or password
+          example: Internal Server Error or Validation Failed
 security:
   - bearerAuth: []
 
@@ -218,3 +218,128 @@ paths:
       responses:
         '200':
           description: Returns stock balances
+
+  /inventory/receipts:
+    post:
+      summary: Record incoming raw materials
+      tags:
+        - Inventory
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - itemId
+                - warehouseId
+                - quantity
+                - internalBatchNumber
+              properties:
+                itemId:
+                  type: string
+                  format: uuid
+                warehouseId:
+                  type: string
+                  format: uuid
+                quantity:
+                  type: number
+                  example: 500
+                internalBatchNumber:
+                  type: string
+                  example: "BATCH-1001"
+                supplierBatchNumber:
+                  type: string
+                referenceId:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '201':
+          description: Receipt recorded successfully
+        '400':
+          description: Validation or business rule error
+
+  /inventory/movements:
+    post:
+      summary: Process stock consumption, transfers, or adjustments
+      tags:
+        - Inventory
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - itemId
+                - type
+                - quantity
+              properties:
+                itemId:
+                  type: string
+                  format: uuid
+                sourceWarehouseId:
+                  type: string
+                  format: uuid
+                destinationWarehouseId:
+                  type: string
+                  format: uuid
+                batchId:
+                  type: string
+                  format: uuid
+                type:
+                  type: string
+                  enum: [TRANSFER_IN, TRANSFER_OUT, ADJUSTMENT_IN, ADJUSTMENT_OUT, CONSUMPTION]
+                quantity:
+                  type: number
+                referenceId:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '201':
+          description: Movement processed successfully
+        '400':
+          description: Validation or business rule error (e.g. Insufficient stock)
+
+  /inventory/reservations:
+    post:
+      summary: Reserve materials for planned production
+      tags:
+        - Inventory
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - itemId
+                - warehouseId
+                - productionJobId
+                - quantity
+              properties:
+                itemId:
+                  type: string
+                  format: uuid
+                warehouseId:
+                  type: string
+                  format: uuid
+                productionJobId:
+                  type: string
+                  example: "JOB-102"
+                quantity:
+                  type: number
+                  example: 150
+      responses:
+        '201':
+          description: Reservation created successfully
+        '400':
+          description: Validation or business rule error
