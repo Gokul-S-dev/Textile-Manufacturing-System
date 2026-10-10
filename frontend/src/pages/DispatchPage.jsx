@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useDispatchStore } from '../store/useDispatchStore';
-import { useQualityStore } from '../store/useQualityStore';
 import { useNotificationStore } from '../store/useNotificationStore';
 import Badge from '../components/Badge';
 import Modal from '../components/Modal';
@@ -10,18 +9,14 @@ import {
   ShieldAlert,
   CheckCircle2,
   Plus,
-  Search,
-  ExternalLink,
-  Printer,
-  Calendar,
   Warehouse,
+  Printer,
 } from 'lucide-react';
 
 export default function DispatchPage() {
   const { finishedRolls, shipments, createShipment, validateRollEligibility } = useDispatchStore();
   const { addToast } = useNotificationStore();
 
-  const [search, setSearch] = useState('');
   const [isShipModalOpen, setIsShipModalOpen] = useState(false);
   const [viewInvoice, setViewInvoice] = useState(null);
 
@@ -45,7 +40,6 @@ export default function DispatchPage() {
       setShipMeters(rollData.quantityMeters);
     }
 
-    // Check validity
     const val = validateRollEligibility(rollNo);
     if (!val.valid) {
       setValidationError(val.reason);
@@ -88,14 +82,20 @@ export default function DispatchPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 max-w-[1600px] mx-auto">
+      {/* Header */}
+      <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-sm border border-slate-100/80 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-[#00bcd4] animate-ping" />
+            <span className="rounded-full bg-cyan-100/70 px-2.5 py-0.5 text-[11px] font-extrabold text-[#00acc1]">
+              Logistics & Dispatch
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-800 mt-2">
             Finished Goods Warehouse & Dispatch
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-400 mt-1 max-w-xl">
             Finished roll storage, QA gatekeeping, logistics vehicle dispatch, and automated tax invoices.
           </p>
         </div>
@@ -106,7 +106,7 @@ export default function DispatchPage() {
             setValidationError('');
             setIsShipModalOpen(true);
           }}
-          className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-blue-500/20 hover:bg-blue-500 transition-all"
+          className="rounded-full bg-[#00bcd4] hover:bg-[#00acc1] px-5 py-2.5 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 transition-all flex items-center gap-2 self-start md:self-auto"
         >
           <Plus className="h-4 w-4" />
           <span>Create Dispatch Shipment</span>
@@ -114,47 +114,45 @@ export default function DispatchPage() {
       </div>
 
       {/* Reviewer Rule Callout */}
-      <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 via-slate-50 to-blue-50 p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shrink-0 mt-0.5">
-            <CheckCircle2 className="h-5 w-5" />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-              Reviewer Business Rule Enforcement
-            </h4>
-            <p className="text-xs text-slate-700 mt-0.5 leading-relaxed">
-              <strong>"You cannot dispatch a roll that has failed quality inspection."</strong> —
-              Roll <strong>R-102</strong> is quarantined and system-locked from dispatch.
-              Only certified rolls (R-101, R-103, R-105) can be issued with invoice and vehicle clearance.
-            </p>
-          </div>
+      <div className="rounded-3xl bg-cyan-50/70 border border-cyan-200/80 p-5 shadow-sm flex items-start gap-3.5">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#00bcd4] text-white shrink-0 mt-0.5 shadow-xs">
+          <CheckCircle2 className="h-5 w-5" />
+        </div>
+        <div>
+          <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
+            Reviewer Business Rule Enforcement
+          </h4>
+          <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+            <strong>"You cannot dispatch a roll that has failed quality inspection."</strong> —
+            Roll <strong>R-102</strong> is quarantined and system-locked from dispatch.
+            Only certified rolls (R-101, R-103, R-105) can be issued with invoice and vehicle clearance.
+          </p>
         </div>
       </div>
 
-      {/* Two Column Section: Finished Warehouse Rolls & Active Dispatch Shipments */}
+      {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Finished Rolls in Warehouse */}
+        {/* Left 2 Cols: Finished Rolls */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Warehouse className="h-4 w-4 text-blue-600" />
+            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+              <Warehouse className="h-4 w-4 text-[#00bcd4]" />
               <span>Finished Fabric Rolls in Warehouse Storage</span>
             </h3>
-            <span className="text-xs text-slate-500">{finishedRolls.length} Rolls In Inventory</span>
+            <span className="text-xs text-slate-400 font-semibold">{finishedRolls.length} Rolls In Inventory</span>
           </div>
 
-          <div className="overflow-hidden rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+          <div className="overflow-hidden rounded-3xl bg-white border border-slate-100 shadow-sm">
             <table className="w-full text-left text-xs text-slate-600">
-              <thead className="border-b border-slate-200 bg-slate-50/75 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+              <thead className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold uppercase text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">Roll No</th>
-                  <th className="px-4 py-3">Buyer & Order</th>
-                  <th className="px-4 py-3">Length</th>
-                  <th className="px-4 py-3">Warehouse Location</th>
-                  <th className="px-4 py-3">QA Status</th>
-                  <th className="px-4 py-3">Dispatch Status</th>
-                  <th className="px-4 py-3 text-right">Action</th>
+                  <th className="px-5 py-3.5">Roll No</th>
+                  <th className="px-5 py-3.5">Buyer & Order</th>
+                  <th className="px-5 py-3.5">Length</th>
+                  <th className="px-5 py-3.5">Warehouse Location</th>
+                  <th className="px-5 py-3.5">QA Status</th>
+                  <th className="px-5 py-3.5">Dispatch Status</th>
+                  <th className="px-5 py-3.5 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -165,45 +163,41 @@ export default function DispatchPage() {
                     <tr
                       key={roll.rollNumber}
                       className={`hover:bg-slate-50/75 transition-colors ${
-                        isBlocked ? 'bg-rose-50/30' : ''
+                        isBlocked ? 'bg-rose-50/20' : ''
                       }`}
                     >
-                      <td className="px-4 py-3 font-bold text-slate-900">
+                      <td className="px-5 py-4 font-black text-slate-900">
                         {roll.rollNumber}
                       </td>
 
-                      <td className="px-4 py-3">
-                        <div className="font-semibold text-slate-800">{roll.buyerName}</div>
-                        <div className="text-[10px] text-slate-500">{roll.orderNumber}</div>
+                      <td className="px-5 py-4">
+                        <div className="font-extrabold text-slate-800">{roll.buyerName}</div>
+                        <div className="text-[10px] text-slate-400">{roll.orderNumber}</div>
                       </td>
 
-                      <td className="px-4 py-3 font-medium text-slate-800">
+                      <td className="px-5 py-4 font-bold text-slate-800">
                         {roll.quantityMeters} M
                       </td>
 
-                      <td className="px-4 py-3 text-[11px] text-slate-600">
+                      <td className="px-5 py-4 text-[11px] text-slate-500">
                         {roll.warehouseLocation}
                       </td>
 
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-4">
                         <Badge status={roll.qualityStatus} />
                       </td>
 
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-4">
                         <Badge status={roll.dispatchStatus} />
                       </td>
 
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-5 py-4 text-right">
                         {isBlocked ? (
-                          <span
-                            title="Cannot dispatch defective roll"
-                            className="inline-flex items-center gap-1 rounded bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700 cursor-not-allowed"
-                          >
-                            <ShieldAlert className="h-3 w-3" />
-                            <span>Blocked</span>
+                          <span className="rounded-full bg-rose-100 px-3 py-1 text-[10px] font-bold text-rose-700 cursor-not-allowed">
+                            Blocked
                           </span>
                         ) : roll.dispatchStatus === 'DISPATCHED' ? (
-                          <span className="text-[10px] text-emerald-600 font-semibold">Dispatched</span>
+                          <span className="text-[11px] text-emerald-600 font-bold">Dispatched</span>
                         ) : (
                           <button
                             onClick={() => {
@@ -214,7 +208,7 @@ export default function DispatchPage() {
                               setValidationError('');
                               setIsShipModalOpen(true);
                             }}
-                            className="rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-100"
+                            className="rounded-full bg-cyan-50 px-3 py-1 text-[11px] font-bold text-[#00acc1] hover:bg-cyan-100"
                           >
                             Dispatch →
                           </button>
@@ -231,52 +225,52 @@ export default function DispatchPage() {
         {/* Right 1 Col: Dispatched Shipments History */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Truck className="h-4 w-4 text-emerald-600" />
+            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+              <Truck className="h-4 w-4 text-[#00bcd4]" />
               <span>Dispatched Shipments</span>
             </h3>
-            <span className="text-xs text-slate-500">{shipments.length} Completed</span>
+            <span className="text-xs text-slate-400 font-semibold">{shipments.length} Completed</span>
           </div>
 
           <div className="space-y-3">
             {shipments.map((shp) => (
               <div
                 key={shp.id}
-                className="rounded-2xl bg-white border border-slate-200/80 p-4 shadow-sm space-y-2.5"
+                className="rounded-3xl bg-white border border-slate-100 p-5 shadow-sm space-y-3"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="font-extrabold text-xs text-slate-900">{shp.dispatchNumber}</span>
-                    <p className="font-bold text-xs text-slate-800 mt-0.5">{shp.buyerName}</p>
+                    <span className="font-black text-xs text-slate-900">{shp.dispatchNumber}</span>
+                    <p className="font-extrabold text-xs text-slate-700 mt-0.5">{shp.buyerName}</p>
                   </div>
                   <Badge status={shp.status} />
                 </div>
 
-                <div className="text-xs text-slate-600 space-y-1 bg-slate-50 p-2.5 rounded-xl">
+                <div className="text-xs text-slate-600 space-y-1 bg-slate-50/70 p-3 rounded-2xl">
                   <div className="flex justify-between">
                     <span className="text-slate-400">Order & Volume:</span>
-                    <span className="font-medium text-slate-800">
+                    <span className="font-bold text-slate-800">
                       {shp.orderNumber} ({shp.quantityMeters} M)
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Vehicle:</span>
-                    <span className="font-medium text-slate-800 truncate max-w-[150px]">{shp.vehicleNumber}</span>
+                    <span className="font-medium text-slate-800 truncate max-w-[140px]">{shp.vehicleNumber}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Invoice:</span>
-                    <span className="font-mono text-blue-600 font-semibold">{shp.invoiceNumber}</span>
+                    <span className="font-mono text-[#00acc1] font-bold">{shp.invoiceNumber}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between border-t pt-2 text-[11px]">
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-[11px]">
                   <span className="text-slate-400">Date: {shp.dispatchDate}</span>
                   <button
                     onClick={() => setViewInvoice(shp)}
-                    className="flex items-center gap-1 font-semibold text-blue-600 hover:underline"
+                    className="font-bold text-[#00acc1] hover:underline flex items-center gap-1"
                   >
                     <FileText className="h-3.5 w-3.5" />
-                    <span>View Tax Invoice</span>
+                    <span>View Invoice</span>
                   </button>
                 </div>
               </div>
@@ -293,11 +287,11 @@ export default function DispatchPage() {
       >
         <form onSubmit={handleCreateShipment} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700">Select Finished Roll *</label>
+            <label className="block text-xs font-bold text-slate-700">Select Finished Roll *</label>
             <select
               value={selectedRoll}
               onChange={handleRollSelect}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+              className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-[#00bcd4] focus:outline-none font-bold"
             >
               {finishedRolls.map((r) => (
                 <option key={r.rollNumber} value={r.rollNumber}>
@@ -307,9 +301,8 @@ export default function DispatchPage() {
             </select>
           </div>
 
-          {/* Validation Error Alert if selecting defective roll */}
           {validationError && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 flex items-start gap-2.5">
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 flex items-start gap-2.5">
               <ShieldAlert className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
               <div>
                 <p className="font-bold">Dispatch Prohibited by QA Control:</p>
@@ -320,73 +313,61 @@ export default function DispatchPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700">Buyer Name</label>
+              <label className="block text-xs font-bold text-slate-700">Buyer Name</label>
               <input
                 type="text"
                 readOnly
                 value={targetBuyer}
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-600"
+                className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-600 font-semibold"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700">Order Number</label>
+              <label className="block text-xs font-bold text-slate-700">Order Number</label>
               <input
                 type="text"
                 readOnly
                 value={targetOrder}
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-600"
+                className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-600 font-semibold"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700">Quantity (Meters)</label>
+              <label className="block text-xs font-bold text-slate-700">Quantity (Meters)</label>
               <input
                 type="number"
                 value={shipMeters}
                 onChange={(e) => setShipMeters(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-[#00bcd4] focus:outline-none font-bold"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700">Delivery Vehicle No. *</label>
+              <label className="block text-xs font-bold text-slate-700">Vehicle Number *</label>
               <input
                 type="text"
                 required
                 value={vehicleNumber}
                 onChange={(e) => setVehicleNumber(e.target.value)}
-                placeholder="e.g. MH-12-QE-4412"
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-[#00bcd4] focus:outline-none font-bold"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700">Driver Name & Contact</label>
-            <input
-              type="text"
-              value={driverName}
-              onChange={(e) => setDriverName(e.target.value)}
-              placeholder="e.g. Suresh Shinde (+91 98230 44556)"
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
-            />
           </div>
 
           <div className="flex justify-end gap-2 border-t pt-4">
             <button
               type="button"
               onClick={() => setIsShipModalOpen(false)}
-              className="rounded-xl border px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              className="rounded-full border px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!!validationError}
-              className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500 shadow disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-full bg-[#00bcd4] hover:bg-[#00acc1] px-5 py-2 text-xs font-extrabold text-white shadow disabled:opacity-50"
             >
-              Approve Dispatch & Generate Invoice
+              Approve Dispatch
             </button>
           </div>
         </form>
@@ -400,100 +381,68 @@ export default function DispatchPage() {
           title={`Tax Invoice: ${viewInvoice.invoiceNumber}`}
           maxWidth="max-w-2xl"
         >
-          <div className="space-y-6 p-2 font-sans">
-            {/* Invoice Header */}
+          <div className="space-y-6 p-2">
             <div className="flex items-start justify-between border-b pb-4">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">EVEREST TEXTILE MILLS</h2>
+                <h2 className="text-lg font-black text-slate-900">EVEREST TEXTILE MILLS</h2>
                 <p className="text-[11px] text-slate-500">
-                  Plot 42, Industrial Weaving Zone, Textile City • GSTIN: 27AABCE1234F1Z5
+                  Industrial Weaving Zone, Textile City • GSTIN: 27AABCE1234F1Z5
                 </p>
-                <p className="text-[11px] text-slate-500">Phone: +91 22 2845 9000 • accounts@textile.local</p>
               </div>
               <div className="text-right">
-                <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
-                  ORIGINAL TAX INVOICE
+                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-extrabold text-emerald-800">
+                  TAX INVOICE
                 </span>
                 <p className="text-xs font-mono font-bold text-slate-800 mt-1">{viewInvoice.invoiceNumber}</p>
-                <p className="text-[11px] text-slate-500">Date: {viewInvoice.dispatchDate}</p>
               </div>
             </div>
 
-            {/* Billed To */}
             <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-[10px] font-bold text-slate-400 uppercase">BILLED TO (BUYER):</p>
-                <p className="font-bold text-slate-900 mt-1">{viewInvoice.buyerName}</p>
-                <p className="text-slate-600 mt-0.5">Order Ref: {viewInvoice.orderNumber}</p>
-                <p className="text-slate-600">Authorized Export Delivery</p>
+              <div className="rounded-2xl bg-slate-50 p-3.5">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">BILLED TO:</p>
+                <p className="font-extrabold text-slate-900 mt-1">{viewInvoice.buyerName}</p>
+                <p className="text-slate-600">Ref: {viewInvoice.orderNumber}</p>
               </div>
 
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-[10px] font-bold text-slate-400 uppercase">DISPATCH LOGISTICS:</p>
-                <p className="font-semibold text-slate-900 mt-1">Vehicle: {viewInvoice.vehicleNumber}</p>
-                <p className="text-slate-600 mt-0.5">Driver: {viewInvoice.driverName || 'Designated Courier'}</p>
+              <div className="rounded-2xl bg-slate-50 p-3.5">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">LOGISTICS:</p>
+                <p className="font-extrabold text-slate-900 mt-1">Vehicle: {viewInvoice.vehicleNumber}</p>
                 <p className="text-slate-600">Gate Pass: {viewInvoice.dispatchNumber}</p>
               </div>
             </div>
 
-            {/* Invoice Line Items */}
-            <div className="overflow-hidden rounded-xl border border-slate-200">
+            <div className="overflow-hidden rounded-2xl border border-slate-200">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100 text-[11px] font-bold uppercase text-slate-600">
                   <tr>
                     <th className="p-3">Item Description</th>
                     <th className="p-3 text-right">Quantity</th>
-                    <th className="p-3 text-right">Rate (₹)</th>
-                    <th className="p-3 text-right">Amount (₹)</th>
+                    <th className="p-3 text-right">Rate</th>
+                    <th className="p-3 text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   <tr>
-                    <td className="p-3 font-medium text-slate-800">
-                      Finished Woven Rolls (Rolls: {viewInvoice.rollsIncluded?.join(', ') || 'R-101'})
-                      <div className="text-[10px] text-slate-500">100% Quality Passed Fabric</div>
-                    </td>
-                    <td className="p-3 text-right font-semibold">{viewInvoice.quantityMeters} Meters</td>
+                    <td className="p-3 font-semibold text-slate-800">Finished Woven Fabric Rolls (QA Passed)</td>
+                    <td className="p-3 text-right">{viewInvoice.quantityMeters} M</td>
                     <td className="p-3 text-right">₹{(viewInvoice.invoiceAmount / viewInvoice.quantityMeters).toFixed(2)}</td>
                     <td className="p-3 text-right font-bold">₹{viewInvoice.invoiceAmount.toLocaleString()}</td>
                   </tr>
                 </tbody>
-                <tfoot className="border-t bg-slate-50 font-semibold text-slate-800">
-                  <tr>
-                    <td colSpan={3} className="p-3 text-right text-xs">
-                      Subtotal:
-                    </td>
-                    <td className="p-3 text-right">₹{viewInvoice.invoiceAmount.toLocaleString()}</td>
-                  </tr>
-                  <tr>
-                    <td colSpan={3} className="p-3 text-right text-xs">
-                      CGST + SGST (5% Textile Rate):
-                    </td>
-                    <td className="p-3 text-right">₹{(viewInvoice.invoiceAmount * 0.05).toLocaleString()}</td>
-                  </tr>
-                  <tr className="border-t border-slate-200 text-sm font-extrabold text-slate-900">
-                    <td colSpan={3} className="p-3 text-right">
-                      Total Invoice Value:
-                    </td>
-                    <td className="p-3 text-right text-blue-700">
-                      ₹{(viewInvoice.invoiceAmount * 1.05).toLocaleString()}
-                    </td>
-                  </tr>
-                </tfoot>
               </table>
             </div>
 
             <div className="flex items-center justify-between border-t pt-4">
               <button
                 onClick={() => window.print()}
-                className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"
               >
                 <Printer className="h-4 w-4" />
-                <span>Print Invoice</span>
+                <span>Print</span>
               </button>
               <button
                 onClick={() => setViewInvoice(null)}
-                className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500 shadow"
+                className="rounded-full bg-[#00bcd4] hover:bg-[#00acc1] px-5 py-2 text-xs font-extrabold text-white shadow"
               >
                 Done
               </button>

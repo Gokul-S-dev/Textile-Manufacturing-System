@@ -9,16 +9,11 @@ import {
   XCircle,
   Plus,
   Search,
-  Filter,
-  GitBranch,
   ShieldAlert,
-  ArrowRight,
-  Eye,
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 export default function QualityPage() {
-  const navigate = useNavigate();
   const { inspections, addInspection, passRate, reworkRate, rejectRate } = useQualityStore();
   const { addToast } = useNotificationStore();
 
@@ -85,15 +80,21 @@ export default function QualityPage() {
   });
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 max-w-[1600px] mx-auto">
+      {/* Header */}
+      <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-sm border border-slate-100/80 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Fabric Quality Inspection & Defect Control
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-[#00bcd4] animate-ping" />
+            <span className="rounded-full bg-cyan-100/70 px-2.5 py-0.5 text-[11px] font-extrabold text-[#00acc1]">
+              Fabric QA Control
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-800 mt-2">
+            Quality Inspection & Defect Control
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            4-point ASTM D5430 inspection standard, defect logging, and full traceability from roll to loom operator.
+          <p className="text-xs text-slate-400 mt-1 max-w-xl">
+            4-point ASTM D5430 inspection standard, defect classification, and strict dispatch gating.
           </p>
         </div>
 
@@ -102,102 +103,95 @@ export default function QualityPage() {
             setRollId(`R-${Math.floor(108 + Math.random() * 80)}`);
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-blue-500/20 hover:bg-blue-500 transition-all"
+          className="rounded-full bg-[#00bcd4] hover:bg-[#00acc1] px-5 py-2.5 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 transition-all flex items-center gap-2 self-start md:self-auto"
         >
           <Plus className="h-4 w-4" />
           <span>Record New Roll Inspection</span>
         </button>
       </div>
 
-      {/* KPI Stats Bar matching Dashboard spec: Passed: 92%, Rework: 5%, Rejected: 3% */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-2xl bg-white p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
+      {/* KPI Cards: Passed 92%, Rework 5%, Rejected 3% */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="rounded-3xl bg-white p-6 shadow-sm border border-slate-100/80 flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold uppercase text-emerald-600 tracking-wider">
+            <span className="text-[11px] font-black uppercase text-emerald-600 tracking-wider">
               Passed Quality Rate
             </span>
-            <p className="text-3xl font-extrabold text-slate-900 mt-1">{passRate}%</p>
-            <p className="text-xs text-slate-500 mt-0.5">Approved for warehouse dispatch</p>
+            <p className="text-3xl font-black text-slate-800 mt-1">{passRate}%</p>
+            <p className="text-xs text-slate-400 mt-0.5">Approved for dispatch</p>
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
             <CheckCircle2 className="h-6 w-6" />
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <div className="rounded-3xl bg-white p-6 shadow-sm border border-slate-100/80 flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold uppercase text-amber-600 tracking-wider">
+            <span className="text-[11px] font-black uppercase text-amber-600 tracking-wider">
               Rework Required
             </span>
-            <p className="text-3xl font-extrabold text-slate-900 mt-1">{reworkRate}%</p>
-            <p className="text-xs text-slate-500 mt-0.5">Scouring, re-dyeing, or edge trimming</p>
+            <p className="text-3xl font-black text-slate-800 mt-1">{reworkRate}%</p>
+            <p className="text-xs text-slate-400 mt-0.5">Scouring or edge trimming</p>
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
             <AlertTriangle className="h-6 w-6" />
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <div className="rounded-3xl bg-white p-6 shadow-sm border border-slate-100/80 flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold uppercase text-rose-600 tracking-wider">
+            <span className="text-[11px] font-black uppercase text-rose-600 tracking-wider">
               Rejected / Scrap
             </span>
-            <p className="text-3xl font-extrabold text-slate-900 mt-1">{rejectRate}%</p>
-            <p className="text-xs text-slate-500 mt-0.5">Blocked from dispatch (Strict Rule)</p>
+            <p className="text-3xl font-black text-slate-800 mt-1">{rejectRate}%</p>
+            <p className="text-xs text-slate-400 mt-0.5">Blocked from shipment</p>
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 border border-rose-100">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
             <XCircle className="h-6 w-6" />
           </div>
         </div>
       </div>
 
-      {/* Reviewer Highlight Box for Roll R-102 */}
-      <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-5 shadow-sm">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-600 text-white shrink-0 mt-0.5">
-              <ShieldAlert className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-rose-950">
-                  Reviewer Requirement Traceability: Roll R-102 Defect Audit
-                </h3>
-                <span className="rounded bg-rose-200 px-2 py-0.5 text-[10px] font-extrabold text-rose-800">
-                  REJECTED
-                </span>
-              </div>
-              <p className="text-xs text-rose-800 font-mono mt-1">
-                Roll R-102 ➔ Order ORD-25 ➔ Machine W-07 ➔ Operator O-15 (Ramesh Kumar) ➔ Defect: Uneven weaving
-              </p>
-              <p className="text-[11px] text-rose-700 mt-0.5">
-                Defective fabric roll locked in Quarantine Q-2. System strictly blocks warehouse dispatch.
-              </p>
-            </div>
+      {/* Reviewer Callout for Roll R-102 */}
+      <div className="rounded-3xl bg-rose-50/70 border border-rose-200/80 p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500 text-white shrink-0 shadow-sm">
+            <ShieldAlert className="h-6 w-6" />
           </div>
-
-          <Link
-            to="/traceability"
-            className="shrink-0 flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 transition-colors shadow"
-          >
-            <GitBranch className="h-3.5 w-3.5" />
-            <span>Trace Full Lineage</span>
-          </Link>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-extrabold text-rose-950">
+                Reviewer Traceability Focus: Roll R-102 Defect Audit
+              </h3>
+              <span className="rounded-full bg-rose-500 px-2.5 py-0.5 text-[10px] font-extrabold text-white">
+                REJECTED
+              </span>
+            </div>
+            <p className="text-xs text-rose-800 font-mono mt-1">
+              Roll R-102 ➔ Order ORD-25 ➔ Machine W-07 ➔ Operator O-15 (Ramesh Kumar) ➔ Defect: Uneven weaving
+            </p>
+          </div>
         </div>
+
+        <Link
+          to="/traceability"
+          className="rounded-full bg-rose-500 hover:bg-rose-600 px-5 py-2 text-xs font-extrabold text-white shadow-xs shrink-0"
+        >
+          Inspect Traceability Matrix →
+        </Link>
       </div>
 
       {/* Filters & Search */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Result Filter Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
           {['ALL', 'PASS', 'REWORK', 'REJECT', 'PENDING INSPECTION'].map((res) => (
             <button
               key={res}
               onClick={() => setFilterResult(res)}
-              className={`rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
+              className={`rounded-full px-4 py-2 text-xs font-bold whitespace-nowrap transition-all shadow-xs ${
                 filterResult === res
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  ? 'bg-[#00bcd4] text-white shadow-cyan-500/20'
+                  : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-100'
               }`}
             >
               {res === 'ALL' ? 'All Rolls' : res}
@@ -205,24 +199,23 @@ export default function QualityPage() {
           ))}
         </div>
 
-        {/* Search */}
         <div className="relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search Roll R-102, defect, machine..."
+            placeholder="Search Roll (R-102), defect..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2 text-xs focus:border-blue-500 focus:outline-none shadow-sm"
+            className="w-full rounded-full border border-slate-200 bg-white pl-10 pr-4 py-2 text-xs focus:border-[#00bcd4] focus:outline-none shadow-xs"
           />
         </div>
       </div>
 
-      {/* Inspection Rolls Table */}
-      <div className="overflow-hidden rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+      {/* Table in Rounded Bento Container */}
+      <div className="overflow-hidden rounded-3xl bg-white border border-slate-100 shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600">
-            <thead className="border-b border-slate-200 bg-slate-50/75 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+            <thead className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold uppercase text-slate-500">
               <tr>
                 <th className="px-5 py-3.5">Roll ID & Order</th>
                 <th className="px-5 py-3.5">Loom & Operator</th>
@@ -242,72 +235,57 @@ export default function QualityPage() {
                   <tr
                     key={item.rollId}
                     className={`hover:bg-slate-50/75 transition-colors ${
-                      isR102 ? 'bg-rose-50/40' : ''
+                      isR102 ? 'bg-rose-50/20' : ''
                     }`}
                   >
-                    {/* Roll ID */}
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
                         <span className="font-extrabold text-slate-900">{item.rollId}</span>
                         {isR102 && (
-                          <span className="rounded bg-rose-600 px-1.5 py-0.2 text-[9px] font-bold text-white">
+                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[9px] font-bold text-white">
                             Reviewer Focus
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-blue-600 font-semibold mt-0.5">
+                      <div className="text-[11px] text-[#00acc1] font-bold mt-0.5">
                         {item.orderId} ({item.buyerName})
                       </div>
                     </td>
 
-                    {/* Loom & Operator */}
                     <td className="px-5 py-4">
-                      <div className="font-semibold text-slate-800">
-                        {item.machineCode} ({item.machineName?.split(' ')[0] || 'Loom'})
-                      </div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">
-                        Op: {item.operatorName} ({item.operatorCode})
-                      </div>
+                      <div className="font-semibold text-slate-800">{item.machineCode}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Op: {item.operatorName}</div>
                     </td>
 
-                    {/* Defect */}
                     <td className="px-5 py-4">
-                      <div className="font-semibold text-slate-900">{item.defectType}</div>
-                      <div className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">
-                        {item.defectDescription}
-                      </div>
+                      <div className="font-bold text-slate-900">{item.defectType}</div>
+                      <div className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">{item.defectDescription}</div>
                     </td>
 
-                    {/* Length */}
-                    <td className="px-5 py-4 font-bold text-slate-800">
-                      {item.rollLengthMeters} Meters
+                    <td className="px-5 py-4 font-black text-slate-800">
+                      {item.rollLengthMeters} M
                     </td>
 
-                    {/* Date */}
-                    <td className="px-5 py-4 text-[11px] text-slate-500">
+                    <td className="px-5 py-4 text-[11px] text-slate-400 font-semibold">
                       {item.inspectionDate}
                     </td>
 
-                    {/* Verdict Result */}
                     <td className="px-5 py-4">
                       <Badge status={item.result} />
                     </td>
 
-                    {/* Warehouse */}
                     <td className="px-5 py-4">
-                      <span className="rounded bg-slate-100 px-2 py-0.5 text-[11px] text-slate-700">
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700">
                         {item.warehouseLocation}
                       </span>
                     </td>
 
-                    {/* Actions */}
                     <td className="px-5 py-4 text-right">
                       <Link
                         to="/traceability"
-                        className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                        className="rounded-full bg-cyan-50 px-3 py-1 text-[11px] font-bold text-[#00acc1] hover:bg-cyan-100 inline-block"
                       >
-                        <GitBranch className="h-3 w-3" />
-                        <span>Trace</span>
+                        Trace
                       </Link>
                     </td>
                   </tr>
@@ -318,64 +296,64 @@ export default function QualityPage() {
         </div>
       </div>
 
-      {/* Record Inspection Modal */}
+      {/* Record Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Record Fabric Roll Quality Inspection" maxWidth="max-w-xl">
         <form onSubmit={handleInspectSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700">Roll ID *</label>
+              <label className="block text-xs font-bold text-slate-700">Roll ID *</label>
               <input
                 type="text"
                 required
                 value={rollId}
                 onChange={(e) => setRollId(e.target.value)}
                 placeholder="e.g. R-108"
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-[#00bcd4] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700">Order ID *</label>
+              <label className="block text-xs font-bold text-slate-700">Order ID *</label>
               <input
                 type="text"
                 required
                 value={orderId}
                 onChange={(e) => setOrderId(e.target.value)}
                 placeholder="e.g. ORD-25"
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-[#00bcd4] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700">Machine Code *</label>
+              <label className="block text-xs font-bold text-slate-700">Machine Code *</label>
               <input
                 type="text"
                 required
                 value={machineCode}
                 onChange={(e) => setMachineCode(e.target.value)}
                 placeholder="e.g. W-07"
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-[#00bcd4] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700">Operator Code *</label>
+              <label className="block text-xs font-bold text-slate-700">Operator Code *</label>
               <input
                 type="text"
                 required
                 value={operatorCode}
                 onChange={(e) => setOperatorCode(e.target.value)}
                 placeholder="e.g. O-15"
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-[#00bcd4] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700">Inspection Result Verdict *</label>
+              <label className="block text-xs font-bold text-slate-700">Verdict *</label>
               <select
                 value={result}
                 onChange={(e) => setResult(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none font-semibold"
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
               >
                 <option value="PASS">PASS (Approved for Dispatch)</option>
                 <option value="REWORK">REWORK (Scouring / Repair)</option>
@@ -385,44 +363,33 @@ export default function QualityPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700">Defect Type</label>
+              <label className="block text-xs font-bold text-slate-700">Defect Type</label>
               <select
                 value={defectType}
                 onChange={(e) => setDefectType(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
               >
                 <option value="None">None (Flawless fabric)</option>
                 <option value="Uneven weaving">Uneven weaving</option>
                 <option value="Holes">Holes / Needle cut</option>
-                <option value="Colour mismatch">Colour mismatch / Shade variation</option>
-                <option value="Oil stain">Oil stain / Lubricant droplet</option>
-                <option value="Broken warp">Broken warp end</option>
+                <option value="Colour mismatch">Colour mismatch</option>
+                <option value="Oil stain">Oil stain</option>
+                <option value="Broken warp">Broken warp</option>
               </select>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700">Defect Details & Location</label>
-            <textarea
-              rows={2}
-              value={defectDescription}
-              onChange={(e) => setDefectDescription(e.target.value)}
-              placeholder="e.g. Uneven pick spacing between meters 45-63..."
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
-            />
           </div>
 
           <div className="flex justify-end gap-2 border-t pt-4">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="rounded-xl border px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              className="rounded-full border px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500 shadow"
+              className="rounded-full bg-[#00bcd4] hover:bg-[#00acc1] px-5 py-2 text-xs font-extrabold text-white shadow"
             >
               Save QA Inspection
             </button>

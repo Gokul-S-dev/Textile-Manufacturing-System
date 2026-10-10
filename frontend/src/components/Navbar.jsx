@@ -1,215 +1,156 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore, USER_ROLES } from '../store/useAuthStore';
-import { useInventoryStore } from '../store/useInventoryStore';
 import {
-  Factory,
+  Search,
   Server,
   UserCheck,
   ChevronDown,
-  LogOut,
-  Bell,
-  Search,
-  ExternalLink,
+  Menu,
+  Sparkles,
   GitBranch,
-  ShieldAlert,
+  LayoutDashboard,
+  ShoppingCart,
+  Boxes,
+  Cpu,
+  Cog,
+  Users,
+  CheckCircle2,
+  Truck,
+  Globe,
+  Coins,
+  History,
+  Settings,
 } from 'lucide-react';
 
+const MODULE_TITLES = {
+  '/dashboard': { name: 'Executive Dashboard', icon: LayoutDashboard },
+  '/orders': { name: 'Buyer Orders', icon: ShoppingCart },
+  '/inventory': { name: 'Raw Material & Yarn Inventory', icon: Boxes },
+  '/production': { name: 'Production Floor Tracking', icon: Cpu },
+  '/machines': { name: '20-Machine Fleet Telemetry', icon: Cog },
+  '/workers': { name: 'Workers Attendance & Wages', icon: Users },
+  '/quality': { name: 'Quality Inspection & Defects', icon: CheckCircle2 },
+  '/dispatch': { name: 'Finished Goods & Dispatch', icon: Truck },
+  '/buyer-portal': { name: 'Customer Buyer Portal', icon: Globe },
+  '/finance': { name: 'Cost & Profit Analytics', icon: Coins },
+  '/traceability': { name: 'End-to-End Traceability Matrix', icon: GitBranch },
+  '/audit-log': { name: 'System Audit Trail', icon: History },
+  '/settings': { name: 'API & Swagger Settings', icon: Settings },
+};
+
 export default function Navbar({ onToggleSidebar }) {
-  const navigate = useNavigate();
-  const { user, activeRole, switchRole, logout, isServerOnline, serverLatency, checkBackendStatus, currentApiUrl } =
-    useAuthStore();
-  const { getLowStockItems } = useInventoryStore();
+  const { user, activeRole, switchRole, isServerOnline, serverLatency, currentApiUrl } = useAuthStore();
   const [showRoleMenu, setShowRoleMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-
-  const lowStockCount = getLowStockItems().length;
-
-  useEffect(() => {
-    checkBackendStatus();
-    const interval = setInterval(() => {
-      checkBackendStatus();
-    }, 20000);
-    return () => clearInterval(interval);
-  }, [checkBackendStatus]);
-
-  const handleRoleSelect = (roleKey) => {
-    switchRole(roleKey);
-    setShowRoleMenu(false);
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
+  const [navSearch, setNavSearch] = useState('');
+  const location = useLocation();
 
   const currentRoleConfig = USER_ROLES[activeRole] || USER_ROLES.ADMIN;
+  const currentModule = MODULE_TITLES[location.pathname] || null;
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/95 px-4 sm:px-6 backdrop-blur">
-      {/* Left: Hamburger + Brand */}
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between px-4 sm:px-8 py-3 bg-[#ecf7f9]/90 backdrop-blur-md">
+      {/* Left: Mobile hamburger & Mill branding & Active Module Title */}
       <div className="flex items-center gap-3">
         <button
           onClick={onToggleSidebar}
-          className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm border border-slate-100 hover:bg-slate-50 lg:hidden"
         >
-          <span className="sr-only">Toggle Sidebar</span>
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          <Menu className="h-5 w-5" />
         </button>
 
-        <Link to="/dashboard" className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
-            <Factory className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-base font-bold tracking-tight text-slate-900">Everest Textile Mills</span>
-              <span className="rounded bg-blue-100 px-1.5 py-0.2 text-[10px] font-semibold text-blue-700">ERP 2.0</span>
-            </div>
-            <p className="text-[11px] text-slate-500 hidden sm:block">Digital Backbone • Spinning • Weaving • Dyeing</p>
-          </div>
-        </Link>
-      </div>
+        <div className="flex items-center gap-2.5">
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <span className="text-lg font-extrabold tracking-tight text-slate-800">
+              Everest Textile Mills
+            </span>
+            <span className="rounded-full bg-cyan-100/70 px-2.5 py-0.5 text-[10px] font-bold text-[#00acc1] hidden sm:inline">
+              ERP Platform
+            </span>
+          </Link>
 
-      {/* Middle: Server Connectivity Indicator */}
-      <div className="hidden md:flex items-center gap-2">
-        <Link
-          to="/settings"
-          title="Configure API connection and check Swagger docs"
-          className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
-            isServerOnline
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-              : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
-          }`}
-        >
-          <span className={`h-2 w-2 rounded-full ${isServerOnline ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`} />
-          <Server className="h-3.5 w-3.5" />
-          <span>
-            {isServerOnline
-              ? `Backend Online (${serverLatency ? `${serverLatency}ms` : 'Ready'})`
-              : 'Demo Mode (Offline Fallback)'}
-          </span>
-          <span className="text-[10px] text-slate-400 font-mono">
-            {currentApiUrl.includes('172.17') ? '172.17.40.17' : 'localhost'}
-          </span>
-        </Link>
-
-        {/* Quick Traceability Button */}
-        <Link
-          to="/traceability"
-          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
-          title="Inspect Roll R-102 & Order ORD-25 End-to-End Traceability"
-        >
-          <GitBranch className="h-3.5 w-3.5 text-blue-600" />
-          <span>Traceability Explorer</span>
-        </Link>
-      </div>
-
-      {/* Right: Notifications, Role Switcher, User Menu */}
-      <div className="flex items-center gap-2.5">
-        {/* Low Stock Warning Bell */}
-        <div className="relative">
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100 transition-colors"
-          >
-            <Bell className="h-5 w-5" />
-            {lowStockCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white">
-                {lowStockCount}
+          {/* Active Module Name Breadcrumb Indicator */}
+          {currentModule && (
+            <div className="hidden md:flex items-center gap-1.5 pl-3 border-l border-slate-300/80">
+              <currentModule.icon className="h-4 w-4 text-[#00bcd4]" />
+              <span className="text-xs font-bold text-slate-800 bg-white px-2.5 py-1 rounded-full shadow-2xs border border-slate-100">
+                {currentModule.name}
               </span>
-            )}
-          </button>
-
-          {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-white p-4 shadow-xl border border-slate-100 z-50">
-              <div className="flex items-center justify-between border-b pb-2 mb-2">
-                <span className="text-xs font-bold uppercase text-slate-500">Inventory & System Alerts</span>
-                <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
-                  {lowStockCount} Critical
-                </span>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-start gap-2.5 text-xs p-2 rounded-lg bg-rose-50 border border-rose-100">
-                  <ShieldAlert className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-rose-900">3 Items Low in Stock</p>
-                    <p className="text-slate-600 text-[11px]">Raw Silk, Mercerized Cotton, & Spandex below threshold.</p>
-                    <Link to="/inventory" className="text-rose-600 hover:underline font-medium text-[11px] mt-1 block">
-                      Go to Inventory →
-                    </Link>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2.5 text-xs p-2 rounded-lg bg-amber-50 border border-amber-100">
-                  <span className="h-2 w-2 rounded-full bg-amber-500 mt-1.5 shrink-0" />
-                  <div>
-                    <p className="font-semibold text-amber-900">Machine W-07 Breakdown</p>
-                    <p className="text-slate-600 text-[11px]">Weft tension error on Roll R-102. Operator O-15.</p>
-                    <Link to="/machines" className="text-amber-600 hover:underline font-medium text-[11px] mt-1 block">
-                      Inspect Machine Floor →
-                    </Link>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
         </div>
+      </div>
 
-        {/* Dynamic RBAC Role Switcher Pill */}
+      {/* Right: Search Pill with Circular Cyan Button (matching reference) + Role Switcher */}
+      <div className="flex items-center gap-3">
+        {/* Search Bar matching reference image */}
+        <div className="relative hidden sm:flex items-center">
+          <input
+            type="text"
+            placeholder="Search..."
+            value={navSearch}
+            onChange={(e) => setNavSearch(e.target.value)}
+            className="h-10 w-48 lg:w-64 rounded-full border border-slate-200/80 bg-white pl-4 pr-11 text-xs text-slate-700 shadow-xs focus:border-[#00bcd4] focus:outline-none focus:ring-2 focus:ring-[#00bcd4]/20"
+          />
+          <button
+            type="button"
+            className="absolute right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[#00bcd4] text-white shadow-sm hover:bg-[#00acc1] transition-colors"
+          >
+            <Search className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Backend Status Pill */}
+        <Link
+          to="/settings"
+          className={`hidden md:flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold border transition-colors shadow-xs ${
+            isServerOnline
+              ? 'border-emerald-200 bg-white text-emerald-700'
+              : 'border-amber-200 bg-white text-amber-700'
+          }`}
+        >
+          <span className={`h-2 w-2 rounded-full ${isServerOnline ? 'bg-emerald-500 animate-ping' : 'bg-amber-400'}`} />
+          <span>{isServerOnline ? `Online (${serverLatency || 20}ms)` : 'Demo Mode'}</span>
+        </Link>
+
+        {/* Testing Role Switcher Pill */}
         <div className="relative">
           <button
             onClick={() => setShowRoleMenu(!showRoleMenu)}
-            className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/70 px-3 py-1.5 text-xs font-medium text-blue-900 hover:bg-blue-100 transition-colors"
+            className="flex items-center gap-2 rounded-full border border-slate-200/80 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:border-[#00bcd4] transition-all"
           >
-            <UserCheck className="h-4 w-4 text-blue-600" />
-            <div className="text-left hidden sm:block">
-              <div className="text-[10px] text-blue-600 uppercase font-semibold leading-none">Testing Role</div>
-              <div className="font-bold leading-tight">{currentRoleConfig.name}</div>
-            </div>
-            <ChevronDown className="h-3.5 w-3.5 text-blue-500" />
+            <span className="h-2 w-2 rounded-full bg-[#00bcd4]" />
+            <span className="hidden sm:inline font-bold text-slate-800">{currentRoleConfig.name}</span>
+            <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
           </button>
 
           {showRoleMenu && (
-            <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white p-2 shadow-2xl border border-slate-100 z-50">
+            <div className="absolute right-0 mt-2 w-64 rounded-3xl bg-white p-2 shadow-xl border border-slate-100 z-50">
               <div className="px-3 py-2 border-b border-slate-100">
-                <p className="text-xs font-bold text-slate-800">Switch Role (Reviewer Tool)</p>
-                <p className="text-[11px] text-slate-500">Test how the UI adapts to each team member role:</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Reviewer Role Switcher</p>
               </div>
-
-              <div className="mt-1 space-y-1">
-                {Object.values(USER_ROLES).map((role) => (
+              <div className="mt-1 space-y-0.5">
+                {Object.values(USER_ROLES).map((r) => (
                   <button
-                    key={role.id}
-                    onClick={() => handleRoleSelect(role.id)}
-                    className={`w-full flex items-start gap-2.5 rounded-lg px-3 py-2 text-left text-xs transition-colors ${
-                      activeRole === role.id ? 'bg-blue-50 text-blue-900 font-semibold' : 'hover:bg-slate-50 text-slate-700'
+                    key={r.id}
+                    onClick={() => {
+                      switchRole(r.id);
+                      setShowRoleMenu(false);
+                    }}
+                    className={`w-full flex items-center justify-between rounded-2xl px-3 py-2 text-left text-xs transition-colors ${
+                      activeRole === r.id
+                        ? 'bg-cyan-50 text-[#00acc1] font-bold'
+                        : 'text-slate-700 hover:bg-slate-50'
                     }`}
                   >
-                    <span className="mt-1 h-2 w-2 rounded-full shrink-0 bg-blue-600" />
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-slate-900">{role.name}</span>
-                        <span className="rounded bg-slate-100 px-1 py-0.2 text-[9px] text-slate-600">{role.badge}</span>
-                      </div>
-                      <p className="text-[10px] text-slate-500 line-clamp-1">{role.description}</p>
-                    </div>
+                    <span>{r.name}</span>
+                    <span className="text-[10px] text-slate-400 font-medium">{r.badge}</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
         </div>
-
-        {/* Logout Button */}
-        <button
-          onClick={handleLogout}
-          title="Sign out"
-          className="rounded-lg p-2 text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-colors"
-        >
-          <LogOut className="h-5 w-5" />
-        </button>
       </div>
     </header>
   );

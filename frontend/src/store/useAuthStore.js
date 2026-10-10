@@ -79,6 +79,13 @@ export const useAuthStore = create((set, get) => ({
   isServerOnline: false,
   serverLatency: null,
   currentApiUrl: getApiBaseUrl(),
+  isSidebarExpanded: localStorage.getItem('textail_sidebar_expanded') === 'true',
+
+  toggleSidebarExpanded: () => {
+    const next = !get().isSidebarExpanded;
+    localStorage.setItem('textail_sidebar_expanded', String(next));
+    set({ isSidebarExpanded: next });
+  },
 
   checkBackendStatus: async () => {
     const health = await systemService.checkHealth();

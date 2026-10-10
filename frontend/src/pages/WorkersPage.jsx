@@ -5,16 +5,8 @@ import { useAuditStore } from '../store/useAuditStore';
 import Modal from '../components/Modal';
 import {
   Users,
-  Clock,
-  Coins,
-  CheckCircle,
-  XCircle,
   Search,
-  Filter,
-  UserCheck,
   Calculator,
-  Calendar,
-  Building,
 } from 'lucide-react';
 
 export default function WorkersPage() {
@@ -62,19 +54,10 @@ export default function WorkersPage() {
 
     updateAttendance(attWorker.id, attStatus, attHours, attOvertime);
 
-    addLog({
-      userName: 'HR / Floor Supervisor',
-      userRole: 'PRODUCTION_MANAGER',
-      action: 'ATTENDANCE_LOG',
-      target: `${attWorker.name} (${attWorker.code})`,
-      details: `Shift marked ${attStatus}. Working hours: ${attHours}h, Overtime: ${attOvertime}h.`,
-      badgeColor: attStatus === 'PRESENT' ? 'green' : 'red',
-    });
-
     addToast({
       type: 'info',
       title: 'Attendance Updated',
-      message: `${attWorker.name} marked ${attStatus}. Wage recalculated automatically.`,
+      message: `${attWorker.name} marked ${attStatus}.`,
     });
 
     setAttWorker(null);
@@ -88,118 +71,119 @@ export default function WorkersPage() {
       w.role.toLowerCase().includes(search.toLowerCase());
 
     const matchesDept = departmentFilter === 'ALL' || w.department === departmentFilter;
-
     return matchesSearch && matchesDept;
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-[1600px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-sm border border-slate-100/80 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-[#00bcd4] animate-ping" />
+            <span className="rounded-full bg-cyan-100/70 px-2.5 py-0.5 text-[11px] font-extrabold text-[#00acc1]">
+              Workforce Register
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-800 mt-2">
             Worker & Shift Management
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Track daily attendance registers, machine allocations, and automated wage calculations: Basic + OT + Incentives.
+          <p className="text-xs text-slate-400 mt-1 max-w-xl">
+            Shift attendance register, loom operator assignments, and automated wage calculation formula.
           </p>
         </div>
       </div>
 
-      {/* KPI Stats */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl bg-white p-4 border border-slate-200/80 shadow-sm">
-          <span className="text-[11px] font-bold uppercase text-slate-400">Total Workforce</span>
-          <p className="text-2xl font-extrabold text-slate-900 mt-1">{workers.length} Operators</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Spinning, Weaving, Dyeing, QA</p>
+        <div className="rounded-3xl bg-white p-5 shadow-sm border border-slate-100/80">
+          <span className="text-[11px] font-black uppercase text-slate-400">Total Workforce</span>
+          <p className="text-3xl font-black text-slate-800 mt-1">{workers.length} Operators</p>
+          <p className="text-xs text-slate-400 mt-0.5">Spinning, Weaving, QA</p>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 border border-slate-200/80 shadow-sm">
-          <span className="text-[11px] font-bold uppercase text-slate-400">Shift A Attendance</span>
-          <p className="text-2xl font-extrabold text-emerald-600 mt-1">
-            {presentCount} / {workers.length} Present
+        <div className="rounded-3xl bg-white p-5 shadow-sm border border-slate-100/80">
+          <span className="text-[11px] font-black uppercase text-slate-400">Shift A Attendance</span>
+          <p className="text-3xl font-black text-emerald-600 mt-1">
+            {presentCount} / {workers.length}
           </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">{workers.length - presentCount} Absent today</p>
+          <p className="text-xs text-slate-400 mt-0.5">{workers.length - presentCount} Absent today</p>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 border border-slate-200/80 shadow-sm">
-          <span className="text-[11px] font-bold uppercase text-slate-400">Total Overtime Logged</span>
-          <p className="text-2xl font-extrabold text-blue-600 mt-1">
+        <div className="rounded-3xl bg-white p-5 shadow-sm border border-slate-100/80">
+          <span className="text-[11px] font-black uppercase text-slate-400">Total Overtime</span>
+          <p className="text-3xl font-black text-[#00acc1] mt-1">
             {workers.reduce((acc, w) => acc + (Number(w.overtimeHours) || 0), 0)} Hours
           </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">High-speed export order push</p>
+          <p className="text-xs text-slate-400 mt-0.5">Logged on high-speed runs</p>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 border border-slate-200/80 shadow-sm">
-          <span className="text-[11px] font-bold uppercase text-slate-400">Daily Mill Wage Payout</span>
-          <p className="text-2xl font-extrabold text-indigo-600 mt-1">
+        <div className="rounded-3xl bg-white p-5 shadow-sm border border-slate-100/80">
+          <span className="text-[11px] font-black uppercase text-slate-400">Daily Mill Wages</span>
+          <p className="text-3xl font-black text-purple-700 mt-1">
             ₹{totalDailyPayout.toLocaleString('en-IN')}
           </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Computed by wage formula</p>
+          <p className="text-xs text-slate-400 mt-0.5">Basic + OT + Incentives</p>
         </div>
       </div>
 
-      {/* Formula Explainer Card */}
-      <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Calculator className="h-5 w-5 text-blue-600 shrink-0" />
-            <div>
-              <h4 className="text-xs font-bold uppercase text-blue-900 tracking-wider">
-                Automated Wage Formula
-              </h4>
-              <p className="text-xs text-blue-800 font-mono mt-0.5">
-                Total Wage = Basic Wage + (Overtime Hours × OT Rate) + Incentives
-              </p>
-            </div>
+      {/* Formula Pill Banner */}
+      <div className="rounded-3xl bg-cyan-50/70 border border-cyan-200/80 p-5 shadow-sm flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#00bcd4] text-white">
+            <Calculator className="h-5 w-5" />
           </div>
-          <span className="rounded bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
-            Compliant with Mill Labor Register
-          </span>
+          <div>
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
+              Automated Wage Calculation
+            </h4>
+            <p className="text-xs text-[#0097a7] font-mono mt-0.5 font-bold">
+              Total Wage = Basic Wage + (Overtime Hours × OT Rate) + Incentives
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Search & Department Filters */}
-      <div className="flex flex-col sm:flex-row items-center gap-3">
-        <div className="relative flex-1 w-full">
-          <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search worker name, operator ID (O-15), role, or department..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2 text-xs focus:border-blue-500 focus:outline-none shadow-sm"
-          />
+      {/* Filters & Table */}
+      <div className="overflow-hidden rounded-3xl bg-white border border-slate-100 shadow-sm">
+        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-sm w-full">
+            <Search className="pointer-events-none absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search operator (O-15), role, department..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-full border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2 text-xs focus:border-[#00bcd4] focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            {['ALL', 'Weaving', 'Spinning', 'Dyeing', 'Quality Control'].map((dept) => (
+              <button
+                key={dept}
+                onClick={() => setDepartmentFilter(dept)}
+                className={`rounded-full px-4 py-1.5 text-xs font-bold whitespace-nowrap transition-all shadow-xs ${
+                  departmentFilter === dept
+                    ? 'bg-[#00bcd4] text-white shadow-cyan-500/20'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {dept === 'ALL' ? 'All' : dept}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-          {['ALL', 'Weaving', 'Spinning', 'Dyeing', 'Quality Control'].map((dept) => (
-            <button
-              key={dept}
-              onClick={() => setDepartmentFilter(dept)}
-              className={`rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
-                departmentFilter === dept
-                  ? 'bg-blue-600 text-white'
-                  : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              {dept === 'ALL' ? 'All Departments' : dept}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Workers Roster & Wage Table */}
-      <div className="overflow-hidden rounded-2xl bg-white border border-slate-200/80 shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600">
-            <thead className="border-b border-slate-200 bg-slate-50/75 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+            <thead className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold uppercase text-slate-500">
               <tr>
                 <th className="px-5 py-3.5">Operator & ID</th>
                 <th className="px-5 py-3.5">Department & Machine</th>
-                <th className="px-5 py-3.5">Attendance Status</th>
+                <th className="px-5 py-3.5">Status</th>
                 <th className="px-5 py-3.5">Hours & OT</th>
-                <th className="px-5 py-3.5">Basic Wage</th>
+                <th className="px-5 py-3.5">Basic</th>
                 <th className="px-5 py-3.5">OT Pay</th>
                 <th className="px-5 py-3.5">Incentives</th>
                 <th className="px-5 py-3.5 font-bold text-slate-900">Total Wage</th>
@@ -216,80 +200,52 @@ export default function WorkersPage() {
                   <tr
                     key={w.id}
                     className={`hover:bg-slate-50/75 transition-colors ${
-                      isO15 ? 'bg-amber-50/25' : ''
+                      isO15 ? 'bg-amber-50/20' : ''
                     }`}
                   >
-                    {/* Operator Name */}
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900">{w.name}</span>
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono text-slate-700">
+                        <span className="font-extrabold text-slate-900">{w.name}</span>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-mono text-slate-700">
                           {w.code}
                         </span>
                         {isO15 && (
-                          <span className="rounded bg-rose-100 px-1.5 py-0.2 text-[9px] font-bold text-rose-700">
+                          <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-bold text-rose-700">
                             W-07 Operator
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">{w.role}</div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">{w.role}</div>
                     </td>
 
-                    {/* Department & Machine */}
                     <td className="px-5 py-4">
                       <div className="font-semibold text-slate-800">{w.department}</div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">
-                        {w.assignedMachine || 'Floor Pool'}
-                      </div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">{w.assignedMachine}</div>
                     </td>
 
-                    {/* Attendance */}
                     <td className="px-5 py-4">
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${
                           w.status === 'PRESENT'
                             ? 'bg-emerald-100 text-emerald-800'
                             : 'bg-rose-100 text-rose-800'
                         }`}
                       >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            w.status === 'PRESENT' ? 'bg-emerald-600' : 'bg-rose-600'
-                          }`}
-                        />
                         {w.status}
                       </span>
                     </td>
 
-                    {/* Hours */}
-                    <td className="px-5 py-4">
-                      <div className="font-semibold text-slate-800">{w.workingHours} hrs</div>
-                      <div className="text-[10px] text-blue-600 font-medium">
-                        +{w.overtimeHours} hrs OT
-                      </div>
+                    <td className="px-5 py-4 font-semibold text-slate-700">
+                      {w.workingHours}h (+{w.overtimeHours}h OT)
                     </td>
 
-                    {/* Basic */}
-                    <td className="px-5 py-4 font-medium text-slate-700">
-                      ₹{w.basicWage}
-                    </td>
-
-                    {/* OT Pay */}
-                    <td className="px-5 py-4 font-medium text-blue-700">
-                      ₹{otPay}
-                    </td>
-
-                    {/* Incentives */}
-                    <td className="px-5 py-4 font-medium text-emerald-700">
-                      ₹{w.incentives}
-                    </td>
-
-                    {/* Total Wage */}
-                    <td className="px-5 py-4 text-sm font-extrabold text-slate-900">
+                    <td className="px-5 py-4 font-semibold text-slate-700">₹{w.basicWage}</td>
+                    <td className="px-5 py-4 font-semibold text-[#00acc1]">₹{otPay}</td>
+                    <td className="px-5 py-4 font-semibold text-emerald-700">₹{w.incentives}</td>
+                    <td className="px-5 py-4 text-sm font-black text-slate-900">
                       ₹{totalWage.toLocaleString('en-IN')}
                     </td>
 
-                    {/* Actions */}
                     <td className="px-5 py-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
@@ -299,11 +255,10 @@ export default function WorkersPage() {
                             setAttHours(w.workingHours);
                             setAttOvertime(w.overtimeHours);
                           }}
-                          className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-200"
+                          className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-200"
                         >
                           Attendance
                         </button>
-
                         <button
                           onClick={() => {
                             setEditWorker(w);
@@ -311,9 +266,9 @@ export default function WorkersPage() {
                             setHourlyOtRate(w.hourlyOtRate);
                             setIncentives(w.incentives);
                           }}
-                          className="rounded-lg bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-100"
+                          className="rounded-full bg-cyan-50 px-3 py-1 text-[11px] font-bold text-[#00acc1] hover:bg-cyan-100"
                         >
-                          Wage Calc
+                          Wage Scale
                         </button>
                       </div>
                     </td>
@@ -334,33 +289,33 @@ export default function WorkersPage() {
         >
           <form onSubmit={handleSaveAttendance} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700">Shift Status</label>
+              <label className="block text-xs font-bold text-slate-700">Shift Status</label>
               <select
                 value={attStatus}
                 onChange={(e) => setAttStatus(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-[#00bcd4] focus:outline-none font-bold"
               >
-                <option value="PRESENT">PRESENT (Shift A - 06:00 to 14:00)</option>
-                <option value="ABSENT">ABSENT (No show / On Leave)</option>
+                <option value="PRESENT">PRESENT (Shift A)</option>
+                <option value="ABSENT">ABSENT</option>
               </select>
             </div>
 
             {attStatus === 'PRESENT' && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700">Regular Hours Worked</label>
+                  <label className="block text-xs font-bold text-slate-700">Hours Worked</label>
                   <input
                     type="number"
                     min="1"
                     max="12"
                     value={attHours}
                     onChange={(e) => setAttHours(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                    className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-[#00bcd4] focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700">Overtime Hours</label>
+                  <label className="block text-xs font-bold text-slate-700">Overtime Hours</label>
                   <input
                     type="number"
                     step="0.5"
@@ -368,7 +323,7 @@ export default function WorkersPage() {
                     max="8"
                     value={attOvertime}
                     onChange={(e) => setAttOvertime(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                    className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-[#00bcd4] focus:outline-none"
                   />
                 </div>
               </div>
@@ -378,22 +333,22 @@ export default function WorkersPage() {
               <button
                 type="button"
                 onClick={() => setAttWorker(null)}
-                className="rounded-xl border px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                className="rounded-full border px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500 shadow"
+                className="rounded-full bg-[#00bcd4] hover:bg-[#00acc1] px-5 py-2 text-xs font-extrabold text-white shadow"
               >
-                Save Attendance Register
+                Save Attendance
               </button>
             </div>
           </form>
         </Modal>
       )}
 
-      {/* Wage Calculation Modal */}
+      {/* Wage Scale Modal */}
       {editWorker && (
         <Modal
           isOpen={!!editWorker}
@@ -402,62 +357,51 @@ export default function WorkersPage() {
         >
           <form onSubmit={handleSaveWage} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700">Basic Daily Wage (₹)</label>
+              <label className="block text-xs font-bold text-slate-700">Basic Daily Wage (₹)</label>
               <input
                 type="number"
                 required
                 value={basicWage}
                 onChange={(e) => setBasicWage(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-[#00bcd4] focus:outline-none font-bold"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700">Hourly Overtime Rate (₹/hr)</label>
+              <label className="block text-xs font-bold text-slate-700">Hourly Overtime Rate (₹/hr)</label>
               <input
                 type="number"
                 required
                 value={hourlyOtRate}
                 onChange={(e) => setHourlyOtRate(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-[#00bcd4] focus:outline-none font-bold"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700">Production Incentives / Bonus (₹)</label>
+              <label className="block text-xs font-bold text-slate-700">Incentives (₹)</label>
               <input
                 type="number"
                 required
                 value={incentives}
                 onChange={(e) => setIncentives(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-[#00bcd4] focus:outline-none font-bold"
               />
-            </div>
-
-            {/* Live Calculation Preview */}
-            <div className="rounded-xl bg-slate-50 p-3 text-xs border border-slate-200">
-              <span className="text-[11px] font-bold text-slate-500 uppercase">Calculated Daily Wage</span>
-              <div className="text-xl font-bold text-slate-900 mt-1">
-                ₹{(Number(basicWage) + Number(editWorker.overtimeHours * hourlyOtRate) + Number(incentives)).toLocaleString('en-IN')}
-              </div>
-              <p className="text-[10px] text-slate-500 mt-0.5">
-                = ₹{basicWage} (Basic) + ₹{editWorker.overtimeHours * hourlyOtRate} (OT) + ₹{incentives} (Incentive)
-              </p>
             </div>
 
             <div className="flex justify-end gap-2 border-t pt-4">
               <button
                 type="button"
                 onClick={() => setEditWorker(null)}
-                className="rounded-xl border px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                className="rounded-full border px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500 shadow"
+                className="rounded-full bg-[#00bcd4] hover:bg-[#00acc1] px-5 py-2 text-xs font-extrabold text-white shadow"
               >
-                Update Wage Scale
+                Update Scale
               </button>
             </div>
           </form>

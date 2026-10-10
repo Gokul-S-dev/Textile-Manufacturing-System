@@ -2,42 +2,46 @@ import React from 'react';
 
 const BADGE_STYLES = {
   // Machine & Statuses
-  RUNNING: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
-  IDLE: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20',
-  BREAKDOWN: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20 animate-pulse',
-  MAINTENANCE: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/20',
+  RUNNING: 'bg-emerald-50 text-emerald-700 border border-emerald-200/60',
+  IDLE: 'bg-amber-50 text-amber-700 border border-amber-200/60',
+  BREAKDOWN: 'bg-rose-50 text-rose-700 border border-rose-200/60 font-bold animate-pulse',
+  MAINTENANCE: 'bg-sky-50 text-sky-700 border border-sky-200/60',
 
   // Quality results
-  PASS: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
-  REWORK: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20',
-  REJECT: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20',
-  'PENDING INSPECTION': 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20',
+  PASS: 'bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-bold',
+  REWORK: 'bg-amber-50 text-amber-700 border border-amber-200/60 font-semibold',
+  REJECT: 'bg-rose-50 text-rose-700 border border-rose-200/60 font-bold',
+  'PENDING INSPECTION': 'bg-purple-50 text-purple-700 border border-purple-200/60',
 
   // Order & Dispatch statuses
-  PENDING: 'bg-amber-500/15 text-amber-600 border border-amber-500/20',
-  IN_PRODUCTION: 'bg-blue-500/15 text-blue-600 border border-blue-500/20',
-  COMPLETED: 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/20',
-  READY_FOR_DISPATCH: 'bg-teal-500/15 text-teal-600 border border-teal-500/20',
-  DISPATCHED: 'bg-purple-500/15 text-purple-600 border border-purple-500/20',
-  BLOCKED_DEFECTIVE: 'bg-rose-500/15 text-rose-600 border border-rose-500/20',
+  PENDING: 'bg-amber-50 text-amber-700 border border-amber-200/60',
+  IN_PRODUCTION: 'bg-cyan-50 text-[#00acc1] border border-cyan-200/60 font-semibold',
+  COMPLETED: 'bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold',
+  READY_FOR_DISPATCH: 'bg-teal-50 text-teal-700 border border-teal-200/60',
+  DISPATCHED: 'bg-purple-50 text-purple-700 border border-purple-200/60',
+  BLOCKED_DEFECTIVE: 'bg-rose-50 text-rose-700 border border-rose-200/60 font-bold',
 
   // Priorities
-  URGENT: 'bg-rose-600 text-white font-semibold',
-  HIGH: 'bg-orange-500 text-white font-medium',
-  MEDIUM: 'bg-blue-500/20 text-blue-700 dark:text-blue-300',
-  LOW: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  URGENT: 'bg-rose-500 text-white font-extrabold shadow-xs',
+  HIGH: 'bg-amber-500 text-white font-bold shadow-xs',
+  MEDIUM: 'bg-cyan-100 text-[#0097a7] font-semibold',
+  LOW: 'bg-slate-100 text-slate-600',
 
-  // Generic
-  default: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  default: 'bg-slate-100 text-slate-600',
 };
 
 export default function Badge({ status, text, size = 'sm', className = '' }) {
   const style = BADGE_STYLES[status] || BADGE_STYLES.default;
-  const sizeClasses = size === 'xs' ? 'px-1.5 py-0.5 text-xs' : size === 'lg' ? 'px-3 py-1.5 text-sm font-semibold' : 'px-2.5 py-1 text-xs font-medium';
+  const sizeClasses =
+    size === 'xs'
+      ? 'px-2 py-0.5 text-[10px]'
+      : size === 'lg'
+      ? 'px-3.5 py-1.5 text-xs font-bold'
+      : 'px-2.5 py-1 text-xs font-medium';
 
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full capitalize leading-none tracking-wide ${style} ${sizeClasses} ${className}`}>
-      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-75" />
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
       {text || status}
     </span>
   );
