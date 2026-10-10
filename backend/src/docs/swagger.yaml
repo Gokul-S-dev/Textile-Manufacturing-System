@@ -79,6 +79,12 @@ paths:
                   type: string
                   format: password
                   example: StrongPassword123!
+                role:
+                  type: string
+                  enum: [ADMIN, PRODUCTION_MANAGER, INVENTORY_MANAGER, DYEING_SUPERVISOR, WEAVING_SUPERVISOR, QC_INSPECTOR, WAREHOUSE_STAFF]
+                department:
+                  type: string
+                  enum: [SPINNING, WEAVING, DYEING, FINISHING, PACKAGING, WAREHOUSE, MANAGEMENT]
       responses:
         '201':
           description: User registered successfully

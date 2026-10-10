@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import prisma from '../../config/db.js';
 
 export const registerUser = async (data) => {
-  const { name, email, password } = data;
+  const { name, email, password, role, department } = data;
 
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -16,22 +16,26 @@ export const registerUser = async (data) => {
   // Hash password using Argon2
   const passwordHash = await argon2.hash(password);
 
-  // Attempt to assign default safe role (e.g., STORE_STAFF)
-  const defaultRole = await prisma.role.findUnique({ where: { name: 'STORE_STAFF' } });
+  // Find or create the requested role (since it's validated by Zod)
+  let userRole = await prisma.role.findUnique({ where: { name: role } });
+  if (!userRole) {
+    userRole = await prisma.role.create({ data: { name: role, description: `Auto-created ${role}` }});
+  }
   
   const user = await prisma.user.create({
     data: {
       name,
       email,
+      department,
       passwordHash,
-      roles: defaultRole ? {
-        create: [{ roleId: defaultRole.id }]
-      } : undefined
+      roles: {
+        create: [{ roleId: userRole.id }]
+      }
     }
   });
 
   // Return safe DTO
-  return { id: user.id, name: user.name, email: user.email };
+  return { id: user.id, name: user.name, email: user.email, department: user.department };
 };
 
 export const authenticateUser = async (email, password) => {
