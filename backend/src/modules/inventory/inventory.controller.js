@@ -26,3 +26,30 @@ export const editItem = async (req, res, next) => {
     next(error);
   }
 };
+
+export const receiveRawMaterial = async (req, res, next) => {
+  try {
+    const result = await inventoryService.recordReceipt(req.body, req.user.id);
+    res.status(201).json({ message: 'Receipt recorded successfully', data: result });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const createMovement = async (req, res, next) => {
+  try {
+    const result = await inventoryService.processMovement(req.body, req.user.id);
+    res.status(201).json({ message: 'Movement processed', data: result });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const reserveMaterial = async (req, res, next) => {
+  try {
+    const result = await inventoryService.createReservation(req.body, req.user.id);
+    res.status(201).json({ message: 'Reservation created', data: result });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
