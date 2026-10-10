@@ -1,16 +1,21 @@
 import { z } from 'zod';
 
-export const signupSchema = z.object({
+export const loginSchema = z.object({
   body: z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters').max(100),
-    email: z.string().email('Invalid email format').toLowerCase().trim(),
-    password: z.string().min(8, 'Password must be at least 8 characters').max(128),
+    email: z.string().email(),
+    password: z.string().min(8)
   })
 });
 
-export const loginSchema = z.object({
+export const refreshSchema = z.object({
+  cookies: z.object({
+    refreshToken: z.string()
+  })
+});
+
+export const changePasswordSchema = z.object({
   body: z.object({
-    email: z.string().email('Invalid email format').toLowerCase().trim(),
-    password: z.string().min(1, 'Password is required'),
+    currentPassword: z.string().min(8),
+    newPassword: z.string().min(8)
   })
 });

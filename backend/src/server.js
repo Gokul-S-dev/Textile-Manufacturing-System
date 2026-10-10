@@ -1,17 +1,22 @@
-import 'dotenv/config';
+import './config/env.js'; // This executes the Zod validation immediately
 import app from './app.js';
 import { connectDB } from './config/db.js';
-
-const PORT = process.env.PORT || 5000;
+import { env } from './config/env.js';
+import { logger } from './utils/logger.js';
 
 const startServer = async () => {
-  // Connect to PostgreSQL via Prisma
-  await connectDB();
-
-  // Start Express Server
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
+  try {
+    await connectDB();
+    logger.info('✅ PostgreSQL connected via Prisma');
+    
+    app.listen(env.PORT, () => {
+      logger.info(`🚀 Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);
+      logger.info(`📘 Swagger Docs available at http://localhost:${env.PORT}/api-docs`);
+    });
+  } catch (error) {
+    logger.error('Failed to start server:', error);
+    process.exit(1);
+  }
 };
 
 startServer();

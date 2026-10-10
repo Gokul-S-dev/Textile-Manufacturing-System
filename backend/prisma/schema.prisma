@@ -1,4 +1,4 @@
-// This is your Prisma schema file
+// Textile Manufacturing Management System (TMMS) Master Schema
 
 generator client {
   provider = "prisma-client-js"
@@ -9,21 +9,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// -----------------------------------------------------------------------------
-// USER & RBAC MODELS
-// -----------------------------------------------------------------------------
-
+// ============================================================================
+// 1. AUTHENTICATION & ACCESS (FR-12)
+// ============================================================================
 model User {
   id           String         @id @default(uuid())
   email        String         @unique
   passwordHash String
   name         String
+  department   String?
   isActive     Boolean        @default(true)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
   roles           UserRole[]
   refreshSessions RefreshSession[]
+  auditLogs       AuditLog[]
 }
 
 model Role {
@@ -39,7 +40,7 @@ model Role {
 
 model Permission {
   id          String           @id @default(uuid())
-  name        String           @unique // e.g., 'inventory.read', 'users.manage'
+  name        String           @unique 
   description String?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
@@ -52,7 +53,6 @@ model UserRole {
   roleId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
   @@id([userId, roleId])
 }
 
@@ -61,7 +61,6 @@ model RolePermission {
   permissionId String
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
   @@id([roleId, permissionId])
 }
 
@@ -74,17 +73,21 @@ model RefreshSession {
   createdAt DateTime @default(now())
 }
 
-// -----------------------------------------------------------------------------
-// INVENTORY MODELS
-// -----------------------------------------------------------------------------
-
-enum ItemType {
-  RAW_MATERIAL
-  WORK_IN_PROGRESS
-  FINISHED_GOOD
-  CONSUMABLE
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  details   Json?
+  createdAt DateTime @default(now())
+  
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
+// ============================================================================
+// 2. PURCHASING & SUPPLIERS (FR-08)
+// ============================================================================
 model Supplier {
   id        String   @id @default(uuid())
   name      String
@@ -95,8 +98,62 @@ model Supplier {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items     Item[]
-  batches   InventoryBatch[]
+  items          Item[]
+  batches        InventoryBatch[]
+  purchaseOrders PurchaseOrder[]
+}
+
+enum POStatus {
+  DRAFT
+  ISSUED
+  PARTIAL
+  COMPLETED
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id          String   @id @default(uuid())
+  poNumber    String   @unique
+  supplierId  String
+  status      POStatus @default(DRAFT)
+  totalAmount Decimal  @db.Decimal(12, 2) @default(0.00)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  supplier    Supplier       @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  items       POItem[]
+  receipts    GoodsReceipt[]
+}
+
+model POItem {
+  id         String   @id @default(uuid())
+  poId       String
+  itemId     String
+  quantity   Decimal  @db.Decimal(12, 2)
+  unitPrice  Decimal  @db.Decimal(12, 2)
+  
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  item          Item          @relation(fields: [itemId], references: [id], onDelete: Restrict)
+}
+
+model GoodsReceipt {
+  id          String   @id @default(uuid())
+  grnNumber   String   @unique
+  poId        String
+  receivedDate DateTime @default(now())
+  invoiceRef  String?
+  
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Restrict)
+}
+
+// ============================================================================
+// 3. INVENTORY & RAW MATERIALS (FR-01, FR-06)
+// ============================================================================
+enum ItemType {
+  RAW_MATERIAL
+  WORK_IN_PROGRESS
+  FINISHED_GOOD
+  CONSUMABLE
 }
 
 model Warehouse {
@@ -118,9 +175,9 @@ model Item {
   name          String
   description   String?
   type          ItemType
-  materialType  String?  // Yarn type etc.
+  materialType  String?
   colour        String?
-  unitOfMeasure String   // e.g., 'kg', 'meters', 'pieces'
+  unitOfMeasure String
   minStock      Decimal  @db.Decimal(10, 2) @default(0.00)
   isActive      Boolean  @default(true)
   
@@ -135,6 +192,7 @@ model Item {
   batches       InventoryBatch[]
   reservations  MaterialReservation[]
   alerts        LowStockAlert[]
+  poItems       POItem[]
 }
 
 model InventoryBatch {
@@ -153,6 +211,7 @@ model InventoryBatch {
   
   balances    InventoryBalance[]
   movements   StockMovement[]
+  consumptions MaterialConsumption[]
 }
 
 model InventoryBalance {
@@ -161,8 +220,8 @@ model InventoryBalance {
   warehouseId      String
   batchId          String?
   
-  quantity         Decimal  @db.Decimal(12, 2) @default(0.00) // Physical quantity
-  reservedQuantity Decimal  @db.Decimal(12, 2) @default(0.00) // Reserved for production
+  quantity         Decimal  @db.Decimal(12, 2) @default(0.00)
+  reservedQuantity Decimal  @db.Decimal(12, 2) @default(0.00)
   
   item        Item            @relation(fields: [itemId], references: [id], onDelete: Restrict)
   warehouse   Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
@@ -216,7 +275,7 @@ model MaterialReservation {
   id               String            @id @default(uuid())
   itemId           String
   warehouseId      String
-  productionJobId  String            // Reference to production order
+  productionJobId  String            
   status           ReservationStatus @default(ACTIVE)
   
   quantity         Decimal           @db.Decimal(12, 2)
@@ -247,4 +306,271 @@ model LowStockAlert {
   
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+}
+
+// ============================================================================
+// 4. MACHINES & MAINTENANCE (FR-02)
+// ============================================================================
+enum MachineStatus {
+  RUNNING
+  IDLE
+  BREAKDOWN
+  MAINTENANCE
+}
+
+model Machine {
+  id           String        @id @default(uuid())
+  code         String        @unique
+  name         String
+  type         String        // e.g. LOOM, SPINNER, DYE_VAT
+  capacity     Decimal       @db.Decimal(10, 2)
+  status       MachineStatus @default(IDLE)
+  location     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  maintenanceRecords MaintenanceRecord[]
+  productionRuns     ProductionRun[]
+  capabilities       MachineCapability[]
+}
+
+model MaintenanceRecord {
+  id           String   @id @default(uuid())
+  machineId    String
+  type         String   // PREVENTIVE, REPAIR
+  description  String
+  cost         Decimal  @db.Decimal(12, 2) @default(0.00)
+  downtimeHours Decimal @db.Decimal(5, 2) @default(0.00)
+  date         DateTime @default(now())
+  
+  machine      Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// 5. WORKFORCE & HR (FR-09)
+// ============================================================================
+model Employee {
+  id           String   @id @default(uuid())
+  workerId     String   @unique
+  name         String
+  role         String   // OPERATOR, QC, SUPERVISOR
+  hourlyRate   Decimal  @db.Decimal(10, 2) @default(0.00)
+  isActive     Boolean  @default(true)
+  
+  assignments  WorkerAssignment[]
+  inspections  QualityInspection[]
+  attendances  Attendance[]
+}
+
+model WorkerAssignment {
+  id           String   @id @default(uuid())
+  employeeId   String
+  runId        String
+  shift        String   // MORNING, EVENING, NIGHT
+  hoursWorked  Decimal  @db.Decimal(5, 2) @default(0.00)
+  
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  productionRun ProductionRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// 6. PRODUCTION EXECUTION (FR-03, FR-04)
+// ============================================================================
+enum MOStatus {
+  PLANNED
+  RELEASED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model ManufacturingOrder {
+  id             String   @id @default(uuid())
+  orderNumber    String   @unique
+  fabricSpec     String
+  targetQuantity Decimal  @db.Decimal(12, 2)
+  status         MOStatus @default(PLANNED)
+  dueDate        DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  runs           ProductionRun[]
+  customerOrder  CustomerOrder? @relation(fields: [customerOrderId], references: [id])
+  customerOrderId String?
+}
+
+enum Stage {
+  SPINNING
+  WEAVING
+  DYEING
+  FINISHING
+}
+
+model ProductionRun {
+  id           String   @id @default(uuid())
+  orderId      String
+  machineId    String
+  stage        Stage
+  startTime    DateTime?
+  endTime      DateTime?
+  status       MOStatus @default(PLANNED)
+  
+  order        ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  machine      Machine            @relation(fields: [machineId], references: [id], onDelete: Restrict)
+  
+  consumptions MaterialConsumption[]
+  workers      WorkerAssignment[]
+  rolls        FabricRoll[]
+}
+
+model MaterialConsumption {
+  id           String   @id @default(uuid())
+  runId        String
+  batchId      String
+  quantity     Decimal  @db.Decimal(12, 2)
+  timestamp    DateTime @default(now())
+  
+  run          ProductionRun   @relation(fields: [runId], references: [id], onDelete: Cascade)
+  batch        InventoryBatch  @relation(fields: [batchId], references: [id], onDelete: Restrict)
+}
+
+// ============================================================================
+// 7. QUALITY & FINISHED GOODS (FR-05)
+// ============================================================================
+enum RollStatus {
+  PENDING_INSPECTION
+  PASSED
+  REWORK
+  REJECTED
+  DISPATCHED
+}
+
+model FabricRoll {
+  id           String     @id @default(uuid())
+  rollNumber   String     @unique
+  runId        String
+  length       Decimal    @db.Decimal(10, 2)
+  weight       Decimal    @db.Decimal(10, 2)
+  status       RollStatus @default(PENDING_INSPECTION)
+  createdAt    DateTime   @default(now())
+  
+  run          ProductionRun @relation(fields: [runId], references: [id], onDelete: Restrict)
+  inspections  QualityInspection[]
+  dispatchItem DispatchItem?
+}
+
+model QualityInspection {
+  id           String     @id @default(uuid())
+  rollId       String
+  inspectorId  String
+  status       RollStatus
+  defectNotes  String?
+  timestamp    DateTime   @default(now())
+  
+  roll         FabricRoll @relation(fields: [rollId], references: [id], onDelete: Cascade)
+  inspector    Employee   @relation(fields: [inspectorId], references: [id], onDelete: Restrict)
+}
+
+// ============================================================================
+// 8. SHIPPING & DISPATCH (FR-07)
+// ============================================================================
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  
+  orders    CustomerOrder[]
+}
+
+enum COStatus {
+  OPEN
+  PARTIAL
+  FULFILLED
+  CANCELLED
+}
+
+model CustomerOrder {
+  id          String   @id @default(uuid())
+  orderNumber String   @unique
+  customerId  String
+  status      COStatus @default(OPEN)
+  orderDate   DateTime @default(now())
+  
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  manufacturingOrders ManufacturingOrder[]
+  dispatches  DispatchRecord[]
+}
+
+model DispatchRecord {
+  id            String   @id @default(uuid())
+  challanNumber String   @unique
+  orderId       String
+  dispatchDate  DateTime @default(now())
+  vehicleNo     String?
+  
+  order         CustomerOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  items         DispatchItem[]
+}
+
+model DispatchItem {
+  id         String   @id @default(uuid())
+  dispatchId String
+  rollId     String   @unique // A roll can only be dispatched once
+  
+  dispatch   DispatchRecord @relation(fields: [dispatchId], references: [id], onDelete: Cascade)
+  roll       FabricRoll     @relation(fields: [rollId], references: [id], onDelete: Restrict)
+}
+
+// ============================================================================
+// 9. FINANCE & COSTING (FR-10)
+// ============================================================================
+model CostEntry {
+  id          String   @id @default(uuid())
+  entityType  String   // e.g. ORDER, MAINTENANCE
+  entityId    String   
+  amount      Decimal  @db.Decimal(12, 2)
+  category    String   // MATERIAL, LABOUR, OVERHEAD
+  timestamp   DateTime @default(now())
+}
+
+// ============================================================================
+// PHASE 5: ADDITIONAL MODELS
+// ============================================================================
+
+model Shift {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  startTime String   // e.g., "08:00"
+  endTime   String   // e.g., "16:00"
+  isActive  Boolean  @default(true)
+  
+  attendances Attendance[]
+}
+
+model Attendance {
+  id         String   @id @default(uuid())
+  employeeId String
+  shiftId    String
+  date       DateTime @db.Date
+  checkIn    DateTime
+  checkOut   DateTime?
+  status     String   @default("PRESENT")
+  
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  shift      Shift    @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+  
+  @@unique([employeeId, shiftId, date])
+}
+
+model MachineCapability {
+  id          String  @id @default(uuid())
+  machineId   String
+  stage       Stage
+  fabricSpec  String
+  
+  machine     Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 }

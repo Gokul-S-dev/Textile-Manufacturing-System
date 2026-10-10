@@ -1,15 +1,21 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: true, credentials: true })); // Important for cookies
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 import authRoutes from './modules/auth/auth.routes.js';
 import inventoryRoutes from './modules/inventory/inventory.routes.js';
+import usersRoutes from './modules/users/users.routes.js';
+import purchasingRoutes from './modules/purchasing/purchasing.routes.js';
+import machinesRoutes from './modules/machines/machines.routes.js';
+import workforceRoutes from './modules/workforce/workforce.routes.js';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import path from 'path';
@@ -22,19 +28,39 @@ const swaggerDocument = YAML.load(path.join(__dirname, 'docs', 'swagger.yaml'));
 // Swagger Documentation Route
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Basic Health Check Route
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'success', message: 'API is running successfully' });
+import { errorHandler } from './middleware/errorHandler.js';
+import pinoHttp from 'pino-http';
+import { logger } from './utils/logger.js';
+
+// Setup HTTP request logging
+app.use(pinoHttp({ logger }));
+
+// Health Check Routes
+app.get('/api/v1/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/api/v1/health/ready', async (req, res) => {
+  try {
+    // Check DB connection
+    const { connectDB } = await import('./config/db.js');
+    await connectDB();
+    res.status(200).json({ status: 'ready', database: 'connected' });
+  } catch (error) {
+    res.status(503).json({ status: 'error', database: 'disconnected' });
+  }
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/inventory', inventoryRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', usersRoutes);
+app.use('/api/v1/inventory', inventoryRoutes);
+app.use('/api/v1/purchasing', purchasingRoutes);
+app.use('/api/v1/machines', machinesRoutes);
+app.use('/api/v1/workforce', workforceRoutes);
+
 
 // Global Error Handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Internal Server Error', error: process.env.NODE_ENV === 'development' ? err.message : undefined });
-});
+app.use(errorHandler);
 
 export default app;

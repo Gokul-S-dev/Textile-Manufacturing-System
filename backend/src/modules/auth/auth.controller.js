@@ -1,45 +1,85 @@
-import { registerUser, authenticateUser } from './auth.service.js';
+import { authenticateUser, changeUserPassword } from './auth.service.js';
+import { rotateRefreshToken, revokeAllUserTokens } from './token.service.js';
+import { PrismaClient } from '@prisma/client';
 
-export const signup = async (req, res, next) => {
-  try {
-    // Validation is already handled via middleware
-    const user = await registerUser(req.body);
-    res.status(201).json({ message: 'User registered successfully', data: user });
-  } catch (error) {
-    if (error.status) {
-      return res.status(error.status).json({ message: error.message });
-    }
-    next(error);
-  }
+const prisma = new PrismaClient();
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'strict',
+  maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 };
 
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const { token, user } = await authenticateUser(email, password);
-    res.status(200).json({ message: 'Login successful', token, data: user });
+    const { accessToken, refreshToken } = await authenticateUser(email, password);
+    
+    res.cookie('refreshToken', refreshToken, cookieOptions);
+    res.status(200).json({ accessToken });
   } catch (error) {
-    if (error.status) {
-      return res.status(error.status).json({ message: error.message });
-    }
     next(error);
   }
 };
 
-export const me = async (req, res, next) => {
+export const refresh = async (req, res, next) => {
   try {
-    // The user object is injected by the authenticate middleware
-    res.status(200).json({ data: req.user });
+    const { refreshToken } = req.cookies;
+    if (!refreshToken) return res.status(401).json({ message: 'No refresh token provided' });
+
+    const tokens = await rotateRefreshToken(refreshToken);
+    
+    res.cookie('refreshToken', tokens.refreshToken, cookieOptions);
+    res.status(200).json({ accessToken: tokens.accessToken });
   } catch (error) {
+    res.clearCookie('refreshToken');
     next(error);
   }
 };
 
 export const logout = async (req, res, next) => {
   try {
-    // For stateless JWT, logout is handled client-side by destroying the token.
-    // If refresh tokens were implemented, we would invalidate them in the DB here.
+    const { refreshToken } = req.cookies;
+    if (refreshToken) {
+      // Find and delete specific session (simplified)
+      // Note: A full implementation verifies the token first before deleting.
+      res.clearCookie('refreshToken');
+    }
     res.status(200).json({ message: 'Logged out successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const logoutAll = async (req, res, next) => {
+  try {
+    await revokeAllUserTokens(req.user.id);
+    res.clearCookie('refreshToken');
+    res.status(200).json({ message: 'Logged out from all devices' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const me = async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, email: true, name: true, department: true, isActive: true }
+    });
+    res.status(200).json({ user, roles: req.user.roles, permissions: req.user.permissions });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    await changeUserPassword(req.user.id, currentPassword, newPassword);
+    res.clearCookie('refreshToken');
+    res.status(200).json({ message: 'Password changed successfully. Please log in again.' });
   } catch (error) {
     next(error);
   }

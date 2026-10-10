@@ -132,7 +132,41 @@ async function main() {
     }
   }
 
-  console.log('Extensive dummy inventory seeded successfully!');
+  // 4. Create Machines (FR-02)
+  console.log('Seeding Machines...');
+  await prisma.machine.upsert({
+    where: { code: 'SPIN-01' },
+    update: {},
+    create: { code: 'SPIN-01', name: 'Rieter Ring Spinner A', type: 'SPINNER', capacity: 500, location: 'Spinning Shed 1' }
+  });
+  
+  await prisma.machine.upsert({
+    where: { code: 'WEAV-01' },
+    update: {},
+    create: { code: 'WEAV-01', name: 'Toyota Airjet Loom', type: 'LOOM', capacity: 200, location: 'Weaving Shed 1' }
+  });
+  
+  await prisma.machine.upsert({
+    where: { code: 'DYE-01' },
+    update: {},
+    create: { code: 'DYE-01', name: 'Thies High Temp Vat', type: 'DYE_VAT', capacity: 1000, location: 'Dye House A' }
+  });
+
+  // 5. Create Employees (FR-09)
+  console.log('Seeding Employees...');
+  await prisma.employee.upsert({
+    where: { workerId: 'EMP-001' },
+    update: {},
+    create: { workerId: 'EMP-001', name: 'Ramesh Kumar', role: 'OPERATOR', hourlyRate: 15.00 }
+  });
+  
+  await prisma.employee.upsert({
+    where: { workerId: 'EMP-002' },
+    update: {},
+    create: { workerId: 'EMP-002', name: 'Sita Devi', role: 'QC', hourlyRate: 18.00 }
+  });
+
+  console.log('Extensive dummy TMMS data seeded successfully!');
 }
 
 main()
