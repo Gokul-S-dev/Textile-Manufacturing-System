@@ -349,3 +349,172 @@ paths:
           description: Reservation created successfully
         '400':
           description: Validation or business rule error
+
+  /auth/refresh:
+    post:
+      summary: Refresh JWT token using cookie
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Refreshed token successfully
+        '401':
+          description: Invalid or expired refresh token
+
+  /auth/logout-all:
+    post:
+      summary: Logout from all devices
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logged out from all devices
+
+  /auth/change-password:
+    post:
+      summary: Change user password
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password changed successfully
+
+  /users:
+    get:
+      summary: List all users
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of users
+    post:
+      summary: Create a new user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name, roles]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                name:
+                  type: string
+                department:
+                  type: string
+                roles:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: User created successfully
+
+  /users/{id}/roles:
+    patch:
+      summary: Update user roles
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [roles]
+              properties:
+                roles:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Roles updated
+
+  /users/{id}/status:
+    patch:
+      summary: Activate or deactivate a user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: Status updated
+
+  /users/{id}/reset-password:
+    post:
+      summary: Admin reset user password
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newPassword]
+              properties:
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password reset successfully

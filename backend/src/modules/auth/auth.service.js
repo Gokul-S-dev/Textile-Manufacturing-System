@@ -1,87 +1,52 @@
+import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
-import jwt from 'jsonwebtoken';
-import prisma from '../../config/db.js';
+import { generateTokens, revokeAllUserTokens } from './token.service.js';
+import { logAudit } from '../audit/audit.service.js';
 
-export const registerUser = async (data) => {
-  const { name, email, password, role, department } = data;
-
-  // Check if user already exists
-  const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) {
-    const error = new Error('User already exists');
-    error.status = 409;
-    throw error;
-  }
-
-  // Hash password using Argon2
-  const passwordHash = await argon2.hash(password);
-
-  // Find or create the requested role (since it's validated by Zod)
-  let userRole = await prisma.role.findUnique({ where: { name: role } });
-  if (!userRole) {
-    userRole = await prisma.role.create({ data: { name: role, description: `Auto-created ${role}` }});
-  }
-  
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      department,
-      passwordHash,
-      roles: {
-        create: [{ roleId: userRole.id }]
-      }
-    }
-  });
-
-  // Return safe DTO
-  return { id: user.id, name: user.name, email: user.email, department: user.department };
-};
+const prisma = new PrismaClient();
 
 export const authenticateUser = async (email, password) => {
   const user = await prisma.user.findUnique({
     where: { email },
     include: {
-      roles: {
-        include: { role: { include: { permissions: { include: { permission: true } } } } }
-      }
+      roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } }
     }
   });
 
-  // Generic failure message to prevent email enumeration
-  if (!user || !user.isActive) {
-    const error = new Error('Invalid email or password');
-    error.status = 401;
-    throw error;
+  // Prevent account enumeration by always throwing generic error
+  const invalidError = { status: 401, message: 'Invalid email or password' };
+
+  if (!user) throw invalidError;
+  if (!user.isActive) {
+    await logAudit({ userId: user.id, action: 'FAILED_LOGIN', entity: 'User', entityId: user.id, details: { reason: 'Inactive account' } });
+    throw invalidError;
   }
 
-  // Verify Argon2 hash
-  const isValid = await argon2.verify(user.passwordHash, password);
-  if (!isValid) {
-    const error = new Error('Invalid email or password');
-    error.status = 401;
-    throw error;
+  const validPassword = await argon2.verify(user.passwordHash, password);
+  if (!validPassword) {
+    await logAudit({ userId: user.id, action: 'FAILED_LOGIN', entity: 'User', entityId: user.id, details: { reason: 'Wrong password' } });
+    throw invalidError;
   }
 
-  // Extract roles and permissions for token payload
-  const roles = user.roles.map(ur => ur.role.name);
-  const permissions = Array.from(new Set(
-    user.roles.flatMap(ur => ur.role.permissions.map(rp => rp.permission.name))
-  ));
+  await logAudit({ userId: user.id, action: 'LOGIN', entity: 'User', entityId: user.id });
+  return await generateTokens(user);
+};
 
-  const jwtSecret = process.env.JWT_SECRET;
-  if (!jwtSecret) {
-    throw new Error('JWT_SECRET is not configured');
-  }
+export const changeUserPassword = async (userId, currentPassword, newPassword) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw { status: 404, message: 'User not found' };
 
-  const token = jwt.sign(
-    { userId: user.id, roles, permissions },
-    jwtSecret,
-    { expiresIn: '1h' }
-  );
+  const validPassword = await argon2.verify(user.passwordHash, currentPassword);
+  if (!validPassword) throw { status: 401, message: 'Invalid current password' };
 
-  return {
-    token,
-    user: { id: user.id, name: user.name, email: user.email, roles, permissions }
-  };
+  const passwordHash = await argon2.hash(newPassword);
+  
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash }
+  });
+
+  // Revoke all tokens to force re-login across all devices
+  await revokeAllUserTokens(userId);
+  await logAudit({ userId, action: 'PASSWORD_CHANGED', entity: 'User', entityId: userId });
 };
