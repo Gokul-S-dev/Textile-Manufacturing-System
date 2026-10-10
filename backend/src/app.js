@@ -16,6 +16,10 @@ import usersRoutes from './modules/users/users.routes.js';
 import purchasingRoutes from './modules/purchasing/purchasing.routes.js';
 import machinesRoutes from './modules/machines/machines.routes.js';
 import workforceRoutes from './modules/workforce/workforce.routes.js';
+import productionRoutes from './modules/production/production.routes.js';
+import mesRoutes from './modules/mes/mes.routes.js';
+import qualityRoutes from './modules/quality/quality.routes.js';
+import warehouseRoutes from './modules/warehouse/warehouse.routes.js';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import path from 'path';
@@ -58,8 +62,10 @@ app.use('/api/v1/inventory', inventoryRoutes);
 app.use('/api/v1/purchasing', purchasingRoutes);
 app.use('/api/v1/machines', machinesRoutes);
 app.use('/api/v1/workforce', workforceRoutes);
-
-
+app.use('/api/v1/production', productionRoutes);
+app.use('/api/v1/mes', mesRoutes);
+app.use('/api/v1/quality', qualityRoutes);
+app.use('/api/v1/warehouse', warehouseRoutes);
 // Global Error Handler
 app.use(errorHandler);
 

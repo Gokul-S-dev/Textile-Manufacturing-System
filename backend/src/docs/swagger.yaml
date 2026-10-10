@@ -50,6 +50,16 @@ paths:
         '200':
           description: API is running successfully
 
+  /health/ready:
+    get:
+      summary: Readiness Check (DB connection)
+      security: []
+      responses:
+        '200':
+          description: API is ready and database is connected
+        '503':
+          description: Database is disconnected
+
   /auth/signup:
     post:
       summary: Register a new user (Super Admin Only)
@@ -515,6 +525,7 @@ paths:
               properties:
                 newPassword:
                   type: string
+      responses:
         '200':
           description: Password reset successfully
 
@@ -803,3 +814,217 @@ paths:
       responses:
         '201':
           description: Worker assigned successfully
+
+  /production/orders:
+    post:
+      summary: Create a manufacturing order
+      tags:
+        - Production
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                salesOrderId:
+                  type: string
+                productId:
+                  type: string
+                quantity:
+                  type: number
+                startDate:
+                  type: string
+                  format: date-time
+                endDate:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Order created
+    get:
+      summary: List manufacturing orders
+      tags:
+        - Production
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Array of manufacturing orders
+
+  /production/orders/{id}/schedule:
+    post:
+      summary: Schedule manufacturing order and create runs
+      tags:
+        - Production
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order scheduled successfully
+
+  /mes/runs/{id}/start:
+    post:
+      summary: Start a production run (consumes material)
+      tags:
+        - MES
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Production run started
+
+  /mes/runs/{id}/complete:
+    post:
+      summary: Complete a production run
+      tags:
+        - MES
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Production run completed
+
+  /mes/runs/{id}/output:
+    post:
+      summary: Record production output (create ProductionBatch)
+      tags:
+        - MES
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: number
+      responses:
+        '201':
+          description: Batch created
+
+  /quality/standards:
+    get:
+      summary: Get all quality standards
+      tags:
+        - Quality Control
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Array of quality standards
+
+  /quality/inspections:
+    post:
+      summary: Create an inspection record for a batch or receipt
+      tags:
+        - Quality Control
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                planId:
+                  type: string
+                batchId:
+                  type: string
+      responses:
+        '201':
+          description: Inspection created
+    get:
+      summary: Get all inspections
+      tags:
+        - Quality Control
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Array of inspections
+
+  /quality/inspections/{id}/complete:
+    post:
+      summary: Complete inspection and calculate outcome
+      tags:
+        - Quality Control
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Inspection completed
+
+  /warehouse/warehouses:
+    get:
+      summary: Get warehouses
+      tags:
+        - Warehouse
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Array of warehouses
+
+  /warehouse/finished-goods/receipts:
+    post:
+      summary: Record finished goods receipt from production
+      tags:
+        - Warehouse
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                batchId:
+                  type: string
+                itemId:
+                  type: string
+                warehouseId:
+                  type: string
+                quantity:
+                  type: number
+                receiptNumber:
+                  type: string
+      responses:
+        '201':
+          description: Finished goods received successfully

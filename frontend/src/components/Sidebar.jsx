@@ -34,7 +34,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const navSections = [
     {
       title: 'CORE ERP',
-      roles: ['ADMIN', 'PRODUCTION_MANAGER', 'STORE_MANAGER', 'QUALITY_INSPECTOR', 'ACCOUNTANT'],
+      roles: ['ADMIN', 'PRODUCTION_MANAGER', 'INVENTORY_MANAGER', 'STORE_MANAGER', 'QUALITY_INSPECTOR', 'ACCOUNTANT'],
       items: [
         {
           name: 'Management Dashboard',
@@ -54,7 +54,7 @@ export default function Sidebar({ isOpen, onClose }) {
     },
     {
       title: 'MANUFACTURING OPERATIONS',
-      roles: ['ADMIN', 'PRODUCTION_MANAGER', 'STORE_MANAGER'],
+      roles: ['ADMIN', 'PRODUCTION_MANAGER', 'INVENTORY_MANAGER', 'STORE_MANAGER'],
       items: [
         {
           name: 'Buyer Orders',
@@ -62,6 +62,7 @@ export default function Sidebar({ isOpen, onClose }) {
           icon: ShoppingCart,
           badge: `${orders.length}`,
           badgeColor: 'bg-slate-100 text-slate-700',
+          allowedRoles: ['ADMIN', 'PRODUCTION_MANAGER']
         },
         {
           name: 'Raw Materials & Yarn',
@@ -69,6 +70,7 @@ export default function Sidebar({ isOpen, onClose }) {
           icon: Boxes,
           badge: lowStockCount > 0 ? `${lowStockCount} Low` : null,
           badgeColor: 'bg-rose-100 text-rose-700',
+          allowedRoles: ['ADMIN', 'INVENTORY_MANAGER', 'STORE_MANAGER']
         },
         {
           name: 'Production Stages',
@@ -76,6 +78,17 @@ export default function Sidebar({ isOpen, onClose }) {
           icon: Cpu,
           badge: `${inProdCount} Active`,
           badgeColor: 'bg-blue-100 text-blue-700',
+          allowedRoles: ['ADMIN', 'PRODUCTION_MANAGER']
+        },
+        {
+          name: 'MES Execution',
+          to: '/mes',
+          icon: Cog,
+          badge: 'Live',
+          badgeColor: 'bg-emerald-100 text-emerald-700',
+          allowedRoles: ['ADMIN', 'PRODUCTION_MANAGER']
+        },
+          allowedRoles: ['ADMIN', 'PRODUCTION_MANAGER']
         },
         {
           name: 'Machine Floor',
@@ -83,11 +96,13 @@ export default function Sidebar({ isOpen, onClose }) {
           icon: Cog,
           badge: breakdownCount > 0 ? `${breakdownCount} Alarm` : '20 Units',
           badgeColor: breakdownCount > 0 ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700',
+          allowedRoles: ['ADMIN', 'PRODUCTION_MANAGER']
         },
         {
           name: 'Workers & Wages',
           to: '/workers',
           icon: Users,
+          allowedRoles: ['ADMIN', 'PRODUCTION_MANAGER']
         },
       ],
     },
@@ -101,11 +116,13 @@ export default function Sidebar({ isOpen, onClose }) {
           icon: CheckCircle2,
           badge: '92% Pass',
           badgeColor: 'bg-emerald-100 text-emerald-700',
+          allowedRoles: ['ADMIN', 'QUALITY_INSPECTOR', 'PRODUCTION_MANAGER']
         },
         {
           name: 'Finished Goods & Dispatch',
           to: '/dispatch',
           icon: Truck,
+          allowedRoles: ['ADMIN', 'STORE_MANAGER', 'PRODUCTION_MANAGER']
         },
       ],
     },
@@ -119,6 +136,7 @@ export default function Sidebar({ isOpen, onClose }) {
           icon: Globe,
           badge: 'ORD-1024',
           badgeColor: 'bg-purple-100 text-purple-700',
+          allowedRoles: ['ADMIN', 'BUYER']
         },
         {
           name: 'Cost & Profit Analytics',
@@ -126,6 +144,7 @@ export default function Sidebar({ isOpen, onClose }) {
           icon: Coins,
           badge: '₹4.3L',
           badgeColor: 'bg-emerald-100 text-emerald-700',
+          allowedRoles: ['ADMIN', 'ACCOUNTANT', 'PRODUCTION_MANAGER']
         },
       ],
     },
@@ -137,11 +156,13 @@ export default function Sidebar({ isOpen, onClose }) {
           name: 'Audit Trail Log',
           to: '/audit-log',
           icon: History,
+          allowedRoles: ['ADMIN']
         },
         {
           name: 'API & Server Config',
           to: '/settings',
           icon: Settings,
+          allowedRoles: ['ADMIN']
         },
       ],
     },
@@ -151,9 +172,11 @@ export default function Sidebar({ isOpen, onClose }) {
   const visibleSections = navSections
     .map((sec) => ({
       ...sec,
-      items: sec.items.filter(() => sec.roles.includes(activeRole)),
+      items: sec.items.filter((item) => 
+        !item.allowedRoles || item.allowedRoles.includes(activeRole)
+      ),
     }))
-    .filter((sec) => sec.items.length > 0);
+    .filter((sec) => sec.items.length > 0 && sec.roles.includes(activeRole));
 
   return (
     <>

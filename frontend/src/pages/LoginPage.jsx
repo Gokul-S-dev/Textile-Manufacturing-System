@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore, USER_ROLES } from '../store/useAuthStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { useNotificationStore } from '../store/useNotificationStore';
 import {
   Factory,
@@ -16,7 +16,7 @@ import {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, demoLogin, isLoading, error, isServerOnline, serverLatency, checkBackendStatus, currentApiUrl, setApiUrl } =
+  const { login, isLoading, error, isServerOnline, serverLatency, checkBackendStatus, currentApiUrl, setApiUrl } =
     useAuthStore();
   const { addToast } = useNotificationStore();
 
@@ -49,15 +49,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickRole = (roleKey) => {
-    demoLogin(roleKey);
-    addToast({
-      type: 'info',
-      title: `Active Role: ${USER_ROLES[roleKey].name}`,
-      message: `Signed in as ${USER_ROLES[roleKey].title}.`,
-    });
-    navigate('/dashboard');
-  };
 
   const handlePingServer = async () => {
     setTestingPing(true);
@@ -265,91 +256,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Quick Reviewer Logins */}
-          <div className="mt-8 border-t border-slate-800 pt-6">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                1-Click Reviewer Test Logins
-              </span>
-              <span className="rounded bg-blue-900/50 px-2 py-0.5 text-[10px] font-medium text-blue-300">
-                Instant Access
-              </span>
-            </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => handleQuickRole('ADMIN')}
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/60 p-2.5 hover:border-blue-500 hover:bg-slate-900 text-left transition-colors"
-              >
-                <div>
-                  <div className="font-semibold text-slate-200">Admin / Owner</div>
-                  <div className="text-[10px] text-slate-400">Full Access</div>
-                </div>
-                <ArrowRight className="h-3.5 w-3.5 text-blue-400" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickRole('PRODUCTION_MANAGER')}
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/60 p-2.5 hover:border-blue-500 hover:bg-slate-900 text-left transition-colors"
-              >
-                <div>
-                  <div className="font-semibold text-slate-200">Production Mgr</div>
-                  <div className="text-[10px] text-slate-400">Floor & Machines</div>
-                </div>
-                <ArrowRight className="h-3.5 w-3.5 text-blue-400" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickRole('STORE_MANAGER')}
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/60 p-2.5 hover:border-blue-500 hover:bg-slate-900 text-left transition-colors"
-              >
-                <div>
-                  <div className="font-semibold text-slate-200">Store Manager</div>
-                  <div className="text-[10px] text-slate-400">Yarn & Receipts</div>
-                </div>
-                <ArrowRight className="h-3.5 w-3.5 text-blue-400" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickRole('QUALITY_INSPECTOR')}
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/60 p-2.5 hover:border-blue-500 hover:bg-slate-900 text-left transition-colors"
-              >
-                <div>
-                  <div className="font-semibold text-slate-200">Quality Inspector</div>
-                  <div className="text-[10px] text-slate-400">Rolls & Defects</div>
-                </div>
-                <ArrowRight className="h-3.5 w-3.5 text-blue-400" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickRole('ACCOUNTANT')}
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/60 p-2.5 hover:border-blue-500 hover:bg-slate-900 text-left transition-colors"
-              >
-                <div>
-                  <div className="font-semibold text-slate-200">Accountant</div>
-                  <div className="text-[10px] text-slate-400">Cost & Wages</div>
-                </div>
-                <ArrowRight className="h-3.5 w-3.5 text-blue-400" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickRole('BUYER')}
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/60 p-2.5 hover:border-blue-500 hover:bg-slate-900 text-left transition-colors"
-              >
-                <div>
-                  <div className="font-semibold text-slate-200">Buyer Portal</div>
-                  <div className="text-[10px] text-slate-400">Track ORD-1024</div>
-                </div>
-                <ArrowRight className="h-3.5 w-3.5 text-blue-400" />
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

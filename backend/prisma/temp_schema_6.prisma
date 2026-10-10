@@ -1,0 +1,65 @@
+
+// ============================================================================
+// PHASE 6: PRODUCTION PLANNING & SCHEDULING
+// ============================================================================
+
+model ProductionRoute {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  stages      ProductionRouteStage[]
+}
+
+model ProductionRouteStage {
+  id             String  @id @default(uuid())
+  routeId        String
+  stage          Stage
+  sequence       Int
+  setupTimeMins  Int     @default(0)
+  outputUnit     String  @default("kg")
+  yieldPercent   Decimal @db.Decimal(5, 2) @default(100.00)
+  
+  route          ProductionRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+}
+
+model ProductionSchedule {
+  id            String   @id @default(uuid())
+  name          String
+  status        String   @default("PROPOSED")
+  createdAt     DateTime @default(now())
+  
+  stages        ScheduledStage[]
+}
+
+model ScheduledStage {
+  id           String   @id @default(uuid())
+  scheduleId   String
+  orderId      String
+  machineId    String?
+  employeeId   String?
+  stage        Stage
+  plannedStart DateTime
+  plannedEnd   DateTime
+  status       String   @default("SCHEDULED")
+  
+  schedule     ProductionSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  order        ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  machine      Machine?           @relation(fields: [machineId], references: [id])
+  employee     Employee?          @relation(fields: [employeeId], references: [id])
+}
+
+model MaterialShortage {
+  id             String   @id @default(uuid())
+  orderId        String
+  materialId     String
+  requiredQty    Decimal  @db.Decimal(12, 2)
+  availableQty   Decimal  @db.Decimal(12, 2)
+  shortageQty    Decimal  @db.Decimal(12, 2)
+  createdAt      DateTime @default(now())
+  
+  order          ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  material       Item               @relation(fields: [materialId], references: [id], onDelete: Restrict)
+}

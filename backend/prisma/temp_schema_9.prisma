@@ -1,0 +1,105 @@
+
+// ============================================================================
+// PHASE 9: FINISHED GOODS, WAREHOUSE, & INVENTORY MGMT
+// ============================================================================
+
+model WarehouseLocation {
+  id          String   @id @default(uuid())
+  warehouseId String
+  code        String   @unique // e.g. ZONE-A-RACK-01
+  type        String   // e.g. RACK, BIN, ZONE
+  capacity    Decimal? @db.Decimal(12, 2)
+  isActive    Boolean  @default(true)
+  
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  
+  balances    InventoryBalance[]
+  movements   StockMovement[]
+}
+
+model FinishedGoodsReceipt {
+  id            String   @id @default(uuid())
+  receiptNumber String   @unique
+  batchId       String
+  itemId        String
+  warehouseId   String
+  locationId    String?
+  quantity      Decimal  @db.Decimal(12, 2)
+  status        String   @default("COMPLETED")
+  remarks       String?
+  receivedById  String
+  createdAt     DateTime @default(now())
+
+  batch         ProductionBatch @relation(fields: [batchId], references: [id])
+  item          Item            @relation(fields: [itemId], references: [id])
+  warehouse     Warehouse       @relation(fields: [warehouseId], references: [id])
+  receivedBy    User            @relation(fields: [receivedById], references: [id])
+}
+
+model WarehouseTransfer {
+  id              String   @id @default(uuid())
+  itemId          String
+  batchId         String?
+  sourceWhId      String
+  sourceLocId     String?
+  destWhId        String
+  destLocId       String?
+  requestedQty    Decimal  @db.Decimal(12, 2)
+  shippedQty      Decimal? @db.Decimal(12, 2)
+  receivedQty     Decimal? @db.Decimal(12, 2)
+  status          String   @default("REQUESTED") // REQUESTED, APPROVED, IN_TRANSIT, RECEIVED, CANCELLED
+  reason          String?
+  requestedById   String
+  createdAt       DateTime @default(now())
+  dispatchedAt    DateTime?
+  receivedAt      DateTime?
+
+  item            Item            @relation(fields: [itemId], references: [id])
+  batch           InventoryBatch? @relation(fields: [batchId], references: [id])
+  sourceWh        Warehouse       @relation("SourceWh", fields: [sourceWhId], references: [id])
+  destWh          Warehouse       @relation("DestWh", fields: [destWhId], references: [id])
+  requestedBy     User            @relation(fields: [requestedById], references: [id])
+}
+
+model StockCount {
+  id            String   @id @default(uuid())
+  warehouseId   String
+  status        String   @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, REJECTED
+  createdBy     String
+  createdAt     DateTime @default(now())
+  approvedBy    String?
+  approvedAt    DateTime?
+  
+  warehouse     Warehouse @relation(fields: [warehouseId], references: [id])
+  creator       User      @relation("CountCreator", fields: [createdBy], references: [id])
+  approver      User?     @relation("CountApprover", fields: [approvedBy], references: [id])
+  
+  items         StockCountItem[]
+}
+
+model StockCountItem {
+  id            String   @id @default(uuid())
+  countId       String
+  itemId        String
+  batchId       String?
+  locationId    String?
+  systemQty     Decimal  @db.Decimal(12, 2)
+  physicalQty   Decimal  @db.Decimal(12, 2)
+  varianceQty   Decimal  @db.Decimal(12, 2)
+  reasonCode    String?
+  
+  count         StockCount @relation(fields: [countId], references: [id], onDelete: Cascade)
+  item          Item       @relation(fields: [itemId], references: [id])
+}
+
+model FinishedGoodsReservation {
+  id            String   @id @default(uuid())
+  orderId       String   // e.g. Customer Order ID
+  itemId        String
+  batchId       String?
+  quantity      Decimal  @db.Decimal(12, 2)
+  status        String   @default("RESERVED") // RESERVED, CONSUMED, RELEASED
+  createdAt     DateTime @default(now())
+  
+  item          Item     @relation(fields: [itemId], references: [id])
+}

@@ -18,11 +18,26 @@ import FinancePage from './pages/FinancePage';
 import TraceabilityPage from './pages/TraceabilityPage';
 import AuditLogPage from './pages/AuditLogPage';
 import SettingsPage from './pages/SettingsPage';
+import MesExecutionPage from './pages/MesExecutionPage';
+import WarehousePage from './pages/WarehousePage';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuthStore();
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+  return children;
+}
+
+function RoleRoute({ children, allowedRoles }) {
+  const { activeRole } = useAuthStore();
+  if (!allowedRoles.includes(activeRole) && activeRole !== 'ADMIN') {
+    return (
+      <div className="flex h-[80vh] items-center justify-center flex-col">
+        <h2 className="text-2xl font-bold text-slate-800">Access Denied</h2>
+        <p className="text-slate-500 mt-2">You do not have permission to view this page.</p>
+      </div>
+    );
   }
   return children;
 }
@@ -45,15 +60,17 @@ export default function App() {
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="orders" element={<OrdersPage />} />
-          <Route path="inventory" element={<InventoryPage />} />
-          <Route path="production" element={<ProductionPage />} />
-          <Route path="machines" element={<MachinesPage />} />
-          <Route path="workers" element={<WorkersPage />} />
-          <Route path="quality" element={<QualityPage />} />
-          <Route path="dispatch" element={<DispatchPage />} />
-          <Route path="buyer-portal" element={<BuyerPortalPage />} />
-          <Route path="finance" element={<FinancePage />} />
+          <Route path="orders" element={<RoleRoute allowedRoles={['PRODUCTION_MANAGER']}><OrdersPage /></RoleRoute>} />
+          <Route path="inventory" element={<RoleRoute allowedRoles={['INVENTORY_MANAGER', 'STORE_MANAGER']}><InventoryPage /></RoleRoute>} />
+          <Route path="warehouse" element={<RoleRoute allowedRoles={['STORE_MANAGER', 'ADMIN']}><WarehousePage /></RoleRoute>} />
+          <Route path="production" element={<RoleRoute allowedRoles={['PRODUCTION_MANAGER']}><ProductionPage /></RoleRoute>} />
+          <Route path="mes" element={<RoleRoute allowedRoles={['PRODUCTION_MANAGER', 'SUPER_ADMIN']}><MesExecutionPage /></RoleRoute>} />
+          <Route path="machines" element={<RoleRoute allowedRoles={['PRODUCTION_MANAGER']}><MachinesPage /></RoleRoute>} />
+          <Route path="workers" element={<RoleRoute allowedRoles={['PRODUCTION_MANAGER']}><WorkersPage /></RoleRoute>} />
+          <Route path="quality" element={<RoleRoute allowedRoles={['QUALITY_INSPECTOR', 'PRODUCTION_MANAGER']}><QualityPage /></RoleRoute>} />
+          <Route path="dispatch" element={<RoleRoute allowedRoles={['STORE_MANAGER', 'PRODUCTION_MANAGER']}><DispatchPage /></RoleRoute>} />
+          <Route path="buyer-portal" element={<RoleRoute allowedRoles={['BUYER']}><BuyerPortalPage /></RoleRoute>} />
+          <Route path="finance" element={<RoleRoute allowedRoles={['ACCOUNTANT', 'PRODUCTION_MANAGER']}><FinancePage /></RoleRoute>} />
           <Route path="traceability" element={<TraceabilityPage />} />
           <Route path="audit-log" element={<AuditLogPage />} />
           <Route path="settings" element={<SettingsPage />} />

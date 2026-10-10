@@ -13,39 +13,47 @@ datasource db {
 // 1. AUTHENTICATION & ACCESS (FR-12)
 // ============================================================================
 model User {
-  id           String         @id @default(uuid())
-  email        String         @unique
+  id           String   @id @default(uuid())
+  email        String   @unique
   passwordHash String
   name         String
   department   String?
-  isActive     Boolean        @default(true)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  roles           UserRole[]
-  refreshSessions RefreshSession[]
-  auditLogs       AuditLog[]
+  roles              UserRole[]
+  refreshSessions    RefreshSession[]
+  auditLogs          AuditLog[]
+  ProductionDelay    ProductionDelay[]
+  InspectionRecord   InspectionRecord[]
+  ReworkRecord       ReworkRecord[]
+  CAPARecord         CAPARecord[]
+  fgReceipts         FinishedGoodsReceipt[]
+  transfersRequested WarehouseTransfer[]
+  createdCounts      StockCount[]           @relation("CountCreator")
+  approvedCounts     StockCount[]           @relation("CountApprover")
 }
 
 model Role {
-  id          String           @id @default(uuid())
-  name        String           @unique
+  id          String   @id @default(uuid())
+  name        String   @unique
   description String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   users       UserRole[]
   permissions RolePermission[]
 }
 
 model Permission {
-  id          String           @id @default(uuid())
-  name        String           @unique 
+  id          String   @id @default(uuid())
+  name        String   @unique
   description String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  roles       RolePermission[]
+  roles RolePermission[]
 }
 
 model UserRole {
@@ -53,6 +61,7 @@ model UserRole {
   roleId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
   @@id([userId, roleId])
 }
 
@@ -61,6 +70,7 @@ model RolePermission {
   permissionId String
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
   @@id([roleId, permissionId])
 }
 
@@ -81,8 +91,8 @@ model AuditLog {
   entityId  String?
   details   Json?
   createdAt DateTime @default(now())
-  
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 // ============================================================================
@@ -116,34 +126,35 @@ model PurchaseOrder {
   poNumber    String   @unique
   supplierId  String
   status      POStatus @default(DRAFT)
-  totalAmount Decimal  @db.Decimal(12, 2) @default(0.00)
+  totalAmount Decimal  @default(0.00) @db.Decimal(12, 2)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  supplier    Supplier       @relation(fields: [supplierId], references: [id], onDelete: Restrict)
-  items       POItem[]
-  receipts    GoodsReceipt[]
+  supplier Supplier       @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  items    POItem[]
+  receipts GoodsReceipt[]
 }
 
 model POItem {
-  id         String   @id @default(uuid())
-  poId       String
-  itemId     String
-  quantity   Decimal  @db.Decimal(12, 2)
-  unitPrice  Decimal  @db.Decimal(12, 2)
-  
+  id        String  @id @default(uuid())
+  poId      String
+  itemId    String
+  quantity  Decimal @db.Decimal(12, 2)
+  unitPrice Decimal @db.Decimal(12, 2)
+
   purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
   item          Item          @relation(fields: [itemId], references: [id], onDelete: Restrict)
 }
 
 model GoodsReceipt {
-  id          String   @id @default(uuid())
-  grnNumber   String   @unique
-  poId        String
+  id           String   @id @default(uuid())
+  grnNumber    String   @unique
+  poId         String
   receivedDate DateTime @default(now())
-  invoiceRef  String?
-  
-  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Restrict)
+  invoiceRef   String?
+
+  purchaseOrder    PurchaseOrder      @relation(fields: [poId], references: [id], onDelete: Restrict)
+  InspectionRecord InspectionRecord[]
 }
 
 // ============================================================================
@@ -164,9 +175,14 @@ model Warehouse {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  balances  InventoryBalance[]
-  movements StockMovement[]
-  alerts    LowStockAlert[]
+  balances        InventoryBalance[]
+  movements       StockMovement[]
+  alerts          LowStockAlert[]
+  locations       WarehouseLocation[]
+  fgReceipts      FinishedGoodsReceipt[]
+  sourceTransfers WarehouseTransfer[]    @relation("SourceWh")
+  destTransfers   WarehouseTransfer[]    @relation("DestWh")
+  stockCounts     StockCount[]
 }
 
 model Item {
@@ -178,56 +194,66 @@ model Item {
   materialType  String?
   colour        String?
   unitOfMeasure String
-  minStock      Decimal  @db.Decimal(10, 2) @default(0.00)
+  minStock      Decimal  @default(0.00) @db.Decimal(10, 2)
   isActive      Boolean  @default(true)
-  
-  supplierId    String?
-  supplier      Supplier? @relation(fields: [supplierId], references: [id])
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
 
-  balances      InventoryBalance[]
-  movements     StockMovement[]
-  batches       InventoryBatch[]
-  reservations  MaterialReservation[]
-  alerts        LowStockAlert[]
-  poItems       POItem[]
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  balances         InventoryBalance[]
+  movements        StockMovement[]
+  batches          InventoryBatch[]
+  reservations     MaterialReservation[]
+  alerts           LowStockAlert[]
+  poItems          POItem[]
+  MaterialShortage MaterialShortage[]
+  receipts         FinishedGoodsReceipt[]
+  transfers        WarehouseTransfer[]
+  countItems       StockCountItem[]
+  fgReservations   FinishedGoodsReservation[]
 }
 
 model InventoryBatch {
-  id                  String   @id @default(uuid())
+  id                  String    @id @default(uuid())
   itemId              String
-  internalBatchNumber String   @unique
+  internalBatchNumber String    @unique
   supplierBatchNumber String?
   supplierId          String?
   manufactureDate     DateTime?
   expiryDate          DateTime?
-  
-  item        Item      @relation(fields: [itemId], references: [id], onDelete: Restrict)
-  supplier    Supplier? @relation(fields: [supplierId], references: [id])
-  
-  createdAt   DateTime  @default(now())
-  
-  balances    InventoryBalance[]
-  movements   StockMovement[]
+
+  item     Item      @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  supplier Supplier? @relation(fields: [supplierId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  balances     InventoryBalance[]
+  movements    StockMovement[]
   consumptions MaterialConsumption[]
+  transfers    WarehouseTransfer[]
 }
 
 model InventoryBalance {
-  id               String   @id @default(uuid())
-  itemId           String
-  warehouseId      String
-  batchId          String?
-  
-  quantity         Decimal  @db.Decimal(12, 2) @default(0.00)
-  reservedQuantity Decimal  @db.Decimal(12, 2) @default(0.00)
-  
-  item        Item            @relation(fields: [itemId], references: [id], onDelete: Restrict)
-  warehouse   Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  batch       InventoryBatch? @relation(fields: [batchId], references: [id], onDelete: Restrict)
-  
-  updatedAt   DateTime  @updatedAt
+  id          String  @id @default(uuid())
+  itemId      String
+  warehouseId String
+  locationId  String?
+  batchId     String?
+
+  quantity         Decimal @default(0.00) @db.Decimal(12, 2)
+  reservedQuantity Decimal @default(0.00) @db.Decimal(12, 2)
+
+  status String @default("AVAILABLE") // AVAILABLE, QUALITY_HOLD, DAMAGED, QUARANTINED, IN_TRANSIT, DISPATCHED
+
+  item      Item               @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  warehouse Warehouse          @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  location  WarehouseLocation? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  batch     InventoryBatch?    @relation(fields: [batchId], references: [id], onDelete: Restrict)
+
+  updatedAt DateTime @updatedAt
 }
 
 enum MovementType {
@@ -239,28 +265,31 @@ enum MovementType {
   ADJUSTMENT_OUT
   ISSUE
   ADJUSTMENT
+  RECEIPT_FG
 }
 
 model StockMovement {
-  id              String       @id @default(uuid())
-  itemId          String
-  warehouseId     String?
-  batchId         String?
-  type            MovementType
-  
-  quantity        Decimal      @db.Decimal(12, 2)
-  previousBalance Decimal      @db.Decimal(12, 2)
-  newBalance      Decimal      @db.Decimal(12, 2)
-  
-  referenceId     String?      
-  reason          String?
-  
-  item            Item            @relation(fields: [itemId], references: [id], onDelete: Restrict)
-  warehouse       Warehouse?      @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  batch           InventoryBatch? @relation(fields: [batchId], references: [id], onDelete: Restrict)
-  
-  createdBy       String       
-  createdAt       DateTime     @default(now())
+  id          String       @id @default(uuid())
+  itemId      String
+  warehouseId String?
+  locationId  String?
+  batchId     String?
+  type        MovementType
+
+  quantity        Decimal @db.Decimal(12, 2)
+  previousBalance Decimal @db.Decimal(12, 2)
+  newBalance      Decimal @db.Decimal(12, 2)
+
+  referenceId String?
+  reason      String?
+
+  item      Item               @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  warehouse Warehouse?         @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  location  WarehouseLocation? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  batch     InventoryBatch?    @relation(fields: [batchId], references: [id], onDelete: Restrict)
+
+  createdBy String
+  createdAt DateTime @default(now())
 }
 
 enum ReservationStatus {
@@ -272,19 +301,19 @@ enum ReservationStatus {
 }
 
 model MaterialReservation {
-  id               String            @id @default(uuid())
-  itemId           String
-  warehouseId      String
-  productionJobId  String            
-  status           ReservationStatus @default(ACTIVE)
-  
-  quantity         Decimal           @db.Decimal(12, 2)
-  
-  item             Item      @relation(fields: [itemId], references: [id], onDelete: Restrict)
-  
-  createdBy        String
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id              String            @id @default(uuid())
+  itemId          String
+  warehouseId     String
+  productionJobId String
+  status          ReservationStatus @default(ACTIVE)
+
+  quantity Decimal @db.Decimal(12, 2)
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum AlertStatus {
@@ -298,14 +327,14 @@ model LowStockAlert {
   itemId      String
   warehouseId String?
   status      AlertStatus @default(ACTIVE)
-  
-  shortage    Decimal     @db.Decimal(12, 2)
-  
-  item        Item       @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+
+  shortage Decimal @db.Decimal(12, 2)
+
+  item      Item       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  warehouse Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ============================================================================
@@ -319,57 +348,59 @@ enum MachineStatus {
 }
 
 model Machine {
-  id           String        @id @default(uuid())
-  code         String        @unique
-  name         String
-  type         String        // e.g. LOOM, SPINNER, DYE_VAT
-  capacity     Decimal       @db.Decimal(10, 2)
-  status       MachineStatus @default(IDLE)
-  location     String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id        String        @id @default(uuid())
+  code      String        @unique
+  name      String
+  type      String // e.g. LOOM, SPINNER, DYE_VAT
+  capacity  Decimal       @db.Decimal(10, 2)
+  status    MachineStatus @default(IDLE)
+  location  String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   maintenanceRecords MaintenanceRecord[]
   productionRuns     ProductionRun[]
   capabilities       MachineCapability[]
+  ScheduledStage     ScheduledStage[]
 }
 
 model MaintenanceRecord {
-  id           String   @id @default(uuid())
-  machineId    String
-  type         String   // PREVENTIVE, REPAIR
-  description  String
-  cost         Decimal  @db.Decimal(12, 2) @default(0.00)
-  downtimeHours Decimal @db.Decimal(5, 2) @default(0.00)
-  date         DateTime @default(now())
-  
-  machine      Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  id            String   @id @default(uuid())
+  machineId     String
+  type          String // PREVENTIVE, REPAIR
+  description   String
+  cost          Decimal  @default(0.00) @db.Decimal(12, 2)
+  downtimeHours Decimal  @default(0.00) @db.Decimal(5, 2)
+  date          DateTime @default(now())
+
+  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 }
 
 // ============================================================================
 // 5. WORKFORCE & HR (FR-09)
 // ============================================================================
 model Employee {
-  id           String   @id @default(uuid())
-  workerId     String   @unique
-  name         String
-  role         String   // OPERATOR, QC, SUPERVISOR
-  hourlyRate   Decimal  @db.Decimal(10, 2) @default(0.00)
-  isActive     Boolean  @default(true)
-  
-  assignments  WorkerAssignment[]
-  inspections  QualityInspection[]
-  attendances  Attendance[]
+  id         String  @id @default(uuid())
+  workerId   String  @unique
+  name       String
+  role       String // OPERATOR, QC, SUPERVISOR
+  hourlyRate Decimal @default(0.00) @db.Decimal(10, 2)
+  isActive   Boolean @default(true)
+
+  assignments    WorkerAssignment[]
+  inspections    QualityInspection[]
+  attendances    Attendance[]
+  ScheduledStage ScheduledStage[]
 }
 
 model WorkerAssignment {
-  id           String   @id @default(uuid())
-  employeeId   String
-  runId        String
-  shift        String   // MORNING, EVENING, NIGHT
-  hoursWorked  Decimal  @db.Decimal(5, 2) @default(0.00)
-  
-  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  id          String  @id @default(uuid())
+  employeeId  String
+  runId       String
+  shift       String // MORNING, EVENING, NIGHT
+  hoursWorked Decimal @default(0.00) @db.Decimal(5, 2)
+
+  employee      Employee      @relation(fields: [employeeId], references: [id], onDelete: Restrict)
   productionRun ProductionRun @relation(fields: [runId], references: [id], onDelete: Cascade)
 }
 
@@ -393,10 +424,14 @@ model ManufacturingOrder {
   dueDate        DateTime
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  
-  runs           ProductionRun[]
-  customerOrder  CustomerOrder? @relation(fields: [customerOrderId], references: [id])
-  customerOrderId String?
+
+  runs             ProductionRun[]
+  customerOrder    CustomerOrder?     @relation(fields: [customerOrderId], references: [id])
+  customerOrderId  String?
+  ScheduledStage   ScheduledStage[]
+  MaterialShortage MaterialShortage[]
+  ProductionBatch  ProductionBatch[]
+  ProductionDelay  ProductionDelay[]
 }
 
 enum Stage {
@@ -407,31 +442,35 @@ enum Stage {
 }
 
 model ProductionRun {
-  id           String   @id @default(uuid())
-  orderId      String
-  machineId    String
-  stage        Stage
-  startTime    DateTime?
-  endTime      DateTime?
-  status       MOStatus @default(PLANNED)
-  
-  order        ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  machine      Machine            @relation(fields: [machineId], references: [id], onDelete: Restrict)
-  
-  consumptions MaterialConsumption[]
-  workers      WorkerAssignment[]
-  rolls        FabricRoll[]
+  id        String    @id @default(uuid())
+  orderId   String
+  machineId String
+  stage     Stage
+  startTime DateTime?
+  endTime   DateTime?
+  status    MOStatus  @default(PLANNED)
+
+  order   ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  machine Machine            @relation(fields: [machineId], references: [id], onDelete: Restrict)
+
+  consumptions      MaterialConsumption[]
+  workers           WorkerAssignment[]
+  rolls             FabricRoll[]
+  ProductionBatch   ProductionBatch?      @relation(fields: [productionBatchId], references: [id])
+  productionBatchId String?
+  ProductionDelay   ProductionDelay[]
+  InspectionRecord  InspectionRecord[]
 }
 
 model MaterialConsumption {
-  id           String   @id @default(uuid())
-  runId        String
-  batchId      String
-  quantity     Decimal  @db.Decimal(12, 2)
-  timestamp    DateTime @default(now())
-  
-  run          ProductionRun   @relation(fields: [runId], references: [id], onDelete: Cascade)
-  batch        InventoryBatch  @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  id        String   @id @default(uuid())
+  runId     String
+  batchId   String
+  quantity  Decimal  @db.Decimal(12, 2)
+  timestamp DateTime @default(now())
+
+  run   ProductionRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  batch InventoryBatch @relation(fields: [batchId], references: [id], onDelete: Restrict)
 }
 
 // ============================================================================
@@ -446,29 +485,29 @@ enum RollStatus {
 }
 
 model FabricRoll {
-  id           String     @id @default(uuid())
-  rollNumber   String     @unique
-  runId        String
-  length       Decimal    @db.Decimal(10, 2)
-  weight       Decimal    @db.Decimal(10, 2)
-  status       RollStatus @default(PENDING_INSPECTION)
-  createdAt    DateTime   @default(now())
-  
-  run          ProductionRun @relation(fields: [runId], references: [id], onDelete: Restrict)
+  id         String     @id @default(uuid())
+  rollNumber String     @unique
+  runId      String
+  length     Decimal    @db.Decimal(10, 2)
+  weight     Decimal    @db.Decimal(10, 2)
+  status     RollStatus @default(PENDING_INSPECTION)
+  createdAt  DateTime   @default(now())
+
+  run          ProductionRun       @relation(fields: [runId], references: [id], onDelete: Restrict)
   inspections  QualityInspection[]
   dispatchItem DispatchItem?
 }
 
 model QualityInspection {
-  id           String     @id @default(uuid())
-  rollId       String
-  inspectorId  String
-  status       RollStatus
-  defectNotes  String?
-  timestamp    DateTime   @default(now())
-  
-  roll         FabricRoll @relation(fields: [rollId], references: [id], onDelete: Cascade)
-  inspector    Employee   @relation(fields: [inspectorId], references: [id], onDelete: Restrict)
+  id          String     @id @default(uuid())
+  rollId      String
+  inspectorId String
+  status      RollStatus
+  defectNotes String?
+  timestamp   DateTime   @default(now())
+
+  roll      FabricRoll @relation(fields: [rollId], references: [id], onDelete: Cascade)
+  inspector Employee   @relation(fields: [inspectorId], references: [id], onDelete: Restrict)
 }
 
 // ============================================================================
@@ -481,8 +520,8 @@ model Customer {
   phone     String?
   address   String?
   createdAt DateTime @default(now())
-  
-  orders    CustomerOrder[]
+
+  orders CustomerOrder[]
 }
 
 enum COStatus {
@@ -498,10 +537,10 @@ model CustomerOrder {
   customerId  String
   status      COStatus @default(OPEN)
   orderDate   DateTime @default(now())
-  
-  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
+  customer            Customer             @relation(fields: [customerId], references: [id], onDelete: Restrict)
   manufacturingOrders ManufacturingOrder[]
-  dispatches  DispatchRecord[]
+  dispatches          DispatchRecord[]
 }
 
 model DispatchRecord {
@@ -510,30 +549,30 @@ model DispatchRecord {
   orderId       String
   dispatchDate  DateTime @default(now())
   vehicleNo     String?
-  
-  order         CustomerOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  items         DispatchItem[]
+
+  order CustomerOrder  @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  items DispatchItem[]
 }
 
 model DispatchItem {
-  id         String   @id @default(uuid())
+  id         String @id @default(uuid())
   dispatchId String
-  rollId     String   @unique // A roll can only be dispatched once
-  
-  dispatch   DispatchRecord @relation(fields: [dispatchId], references: [id], onDelete: Cascade)
-  roll       FabricRoll     @relation(fields: [rollId], references: [id], onDelete: Restrict)
+  rollId     String @unique // A roll can only be dispatched once
+
+  dispatch DispatchRecord @relation(fields: [dispatchId], references: [id], onDelete: Cascade)
+  roll     FabricRoll     @relation(fields: [rollId], references: [id], onDelete: Restrict)
 }
 
 // ============================================================================
 // 9. FINANCE & COSTING (FR-10)
 // ============================================================================
 model CostEntry {
-  id          String   @id @default(uuid())
-  entityType  String   // e.g. ORDER, MAINTENANCE
-  entityId    String   
-  amount      Decimal  @db.Decimal(12, 2)
-  category    String   // MATERIAL, LABOUR, OVERHEAD
-  timestamp   DateTime @default(now())
+  id         String   @id @default(uuid())
+  entityType String // e.g. ORDER, MAINTENANCE
+  entityId   String
+  amount     Decimal  @db.Decimal(12, 2)
+  category   String // MATERIAL, LABOUR, OVERHEAD
+  timestamp  DateTime @default(now())
 }
 
 // ============================================================================
@@ -541,36 +580,412 @@ model CostEntry {
 // ============================================================================
 
 model Shift {
-  id        String   @id @default(uuid())
-  code      String   @unique
+  id        String  @id @default(uuid())
+  code      String  @unique
   name      String
-  startTime String   // e.g., "08:00"
-  endTime   String   // e.g., "16:00"
-  isActive  Boolean  @default(true)
-  
+  startTime String // e.g., "08:00"
+  endTime   String // e.g., "16:00"
+  isActive  Boolean @default(true)
+
   attendances Attendance[]
 }
 
 model Attendance {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   employeeId String
   shiftId    String
-  date       DateTime @db.Date
+  date       DateTime  @db.Date
   checkIn    DateTime
   checkOut   DateTime?
-  status     String   @default("PRESENT")
-  
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  shift      Shift    @relation(fields: [shiftId], references: [id], onDelete: Restrict)
-  
+  status     String    @default("PRESENT")
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  shift    Shift    @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+
   @@unique([employeeId, shiftId, date])
 }
 
 model MachineCapability {
+  id         String @id @default(uuid())
+  machineId  String
+  stage      Stage
+  fabricSpec String
+
+  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// PHASE 6: PRODUCTION PLANNING & SCHEDULING
+// ============================================================================
+
+model ProductionRoute {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  stages ProductionRouteStage[]
+}
+
+model ProductionRouteStage {
+  id            String  @id @default(uuid())
+  routeId       String
+  stage         Stage
+  sequence      Int
+  setupTimeMins Int     @default(0)
+  outputUnit    String  @default("kg")
+  yieldPercent  Decimal @default(100.00) @db.Decimal(5, 2)
+
+  route ProductionRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+}
+
+model ProductionSchedule {
+  id        String   @id @default(uuid())
+  name      String
+  status    String   @default("PROPOSED")
+  createdAt DateTime @default(now())
+
+  stages ScheduledStage[]
+}
+
+model ScheduledStage {
+  id           String   @id @default(uuid())
+  scheduleId   String
+  orderId      String
+  machineId    String?
+  employeeId   String?
+  stage        Stage
+  plannedStart DateTime
+  plannedEnd   DateTime
+  status       String   @default("SCHEDULED")
+
+  schedule        ProductionSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  order           ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  machine         Machine?           @relation(fields: [machineId], references: [id])
+  employee        Employee?          @relation(fields: [employeeId], references: [id])
+  ProductionDelay ProductionDelay[]
+}
+
+model MaterialShortage {
+  id           String   @id @default(uuid())
+  orderId      String
+  materialId   String
+  requiredQty  Decimal  @db.Decimal(12, 2)
+  availableQty Decimal  @db.Decimal(12, 2)
+  shortageQty  Decimal  @db.Decimal(12, 2)
+  createdAt    DateTime @default(now())
+
+  order    ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  material Item               @relation(fields: [materialId], references: [id], onDelete: Restrict)
+}
+
+// ============================================================================
+// PHASE 7: MES (MANUFACTURING EXECUTION SYSTEM)
+// ============================================================================
+
+enum RunStatus {
+  READY
+  IN_PROGRESS
+  PAUSED
+  BLOCKED
+  COMPLETED
+  CANCELLED
+}
+
+enum DelayType {
+  BREAKDOWN
+  MATERIAL
+  WORKER
+  UTILITY
+  QUALITY
+  DEVIATION
+  OTHER
+}
+
+model ProductionBatch {
+  id           String   @id @default(uuid())
+  batchNumber  String   @unique
+  orderId      String
+  currentStage Stage
+  quantity     Decimal  @db.Decimal(12, 2)
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+
+  order            ManufacturingOrder     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  runs             ProductionRun[]
+  InspectionRecord InspectionRecord[]
+  ReworkRecord     ReworkRecord[]
+  receipts         FinishedGoodsReceipt[]
+}
+
+model ProductionDelay {
+  id             String    @id @default(uuid())
+  orderId        String
+  stageId        String?
+  runId          String?
+  type           DelayType
+  reason         String
+  startTime      DateTime  @default(now())
+  resolutionTime DateTime?
+  reportedById   String
+  status         String    @default("OPEN")
+
+  order      ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  stage      ScheduledStage?    @relation(fields: [stageId], references: [id])
+  run        ProductionRun?     @relation(fields: [runId], references: [id])
+  reportedBy User               @relation(fields: [reportedById], references: [id])
+}
+
+// ============================================================================
+// PHASE 8: QUALITY CONTROL AND INSPECTION SYSTEM
+// ============================================================================
+
+enum DefectSeverity {
+  MINOR
+  MAJOR
+  CRITICAL
+}
+
+enum InspectionStatus {
+  PENDING_INSPECTION
+  IN_PROGRESS
+  PASSED
+  FAILED
+  ON_HOLD
+  CANCELLED
+}
+
+model QualityStandard {
+  id              String   @id @default(uuid())
+  name            String
+  targetCategory  String? // e.g., 'Yarn', 'Fabric'
+  targetStage     String?
+  parameter       String
+  measurementUnit String
+  minVal          Decimal? @db.Decimal(12, 4)
+  maxVal          Decimal? @db.Decimal(12, 4)
+  targetVal       Decimal? @db.Decimal(12, 4)
+  isActive        Boolean  @default(true)
+  version         Int      @default(1)
+
+  createdAt DateTime @default(now())
+
+  measurements InspectionMeasurement[]
+}
+
+model InspectionPlan {
+  id             String  @id @default(uuid())
+  name           String
+  productProcess String
+  samplingMethod String
+  sampleSize     Int
+  frequency      String?
+
+  createdAt DateTime @default(now())
+
+  records InspectionRecord[]
+}
+
+model DefectCatalogue {
+  id                String         @id @default(uuid())
+  code              String         @unique
+  name              String
+  description       String?
+  category          String
+  severity          DefectSeverity
+  recommendedAction String?
+  isActive          Boolean        @default(true)
+
+  observedDefects ObservedDefect[]
+}
+
+model InspectionRecord {
   id          String  @id @default(uuid())
-  machineId   String
-  stage       Stage
-  fabricSpec  String
-  
-  machine     Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  type        String
+  planId      String?
+  batchId     String?
+  runId       String?
+  receiptId   String?
+  inspectorId String?
+
+  status            InspectionStatus @default(PENDING_INSPECTION)
+  startTime         DateTime?
+  completionTime    DateTime?
+  overallOutcome    String? // e.g., 'PASSED', 'FAILED', 'ON_HOLD'
+  inspectorComments String?
+
+  createdAt DateTime @default(now())
+
+  plan      InspectionPlan?  @relation(fields: [planId], references: [id])
+  batch     ProductionBatch? @relation(fields: [batchId], references: [id])
+  run       ProductionRun?   @relation(fields: [runId], references: [id])
+  receipt   GoodsReceipt?    @relation(fields: [receiptId], references: [id])
+  inspector User?            @relation(fields: [inspectorId], references: [id])
+
+  measurements InspectionMeasurement[]
+  defects      ObservedDefect[]
+  reworks      ReworkRecord[]
+}
+
+model InspectionMeasurement {
+  id               String   @id @default(uuid())
+  recordId         String
+  standardId       String
+  recordedValue    Decimal? @db.Decimal(12, 4)
+  categoricalValue String?
+  isPassed         Boolean
+
+  record   InspectionRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  standard QualityStandard  @relation(fields: [standardId], references: [id])
+}
+
+model ObservedDefect {
+  id             String  @id @default(uuid())
+  recordId       String
+  defectId       String
+  quantity       Int     @default(1)
+  location       String?
+  inspectorNotes String?
+  disposition    String?
+
+  record InspectionRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  defect DefectCatalogue  @relation(fields: [defectId], references: [id])
+}
+
+model ReworkRecord {
+  id              String    @id @default(uuid())
+  inspectionId    String
+  batchId         String
+  instructions    String
+  assignedToId    String?
+  plannedQuantity Decimal   @db.Decimal(12, 2)
+  actualQuantity  Decimal?  @db.Decimal(12, 2)
+  status          String    @default("PENDING")
+  startTime       DateTime?
+  completionTime  DateTime?
+
+  inspection InspectionRecord @relation(fields: [inspectionId], references: [id])
+  batch      ProductionBatch  @relation(fields: [batchId], references: [id])
+  assignedTo User?            @relation(fields: [assignedToId], references: [id])
+}
+
+model CAPARecord {
+  id                 String    @id @default(uuid())
+  problemDescription String
+  rootCauseCategory  String?
+  rootCauseNotes     String?
+  correctiveAction   String?
+  preventiveAction   String?
+  assignedToId       String?
+  dueDate            DateTime?
+  status             String    @default("OPEN")
+  createdAt          DateTime  @default(now())
+
+  assignedTo User? @relation(fields: [assignedToId], references: [id])
+}
+
+// ============================================================================
+// PHASE 9: FINISHED GOODS, WAREHOUSE, & INVENTORY MGMT
+// ============================================================================
+
+model WarehouseLocation {
+  id          String   @id @default(uuid())
+  warehouseId String
+  code        String   @unique // e.g. ZONE-A-RACK-01
+  type        String // e.g. RACK, BIN, ZONE
+  capacity    Decimal? @db.Decimal(12, 2)
+  isActive    Boolean  @default(true)
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  balances  InventoryBalance[]
+  movements StockMovement[]
+}
+
+model FinishedGoodsReceipt {
+  id            String   @id @default(uuid())
+  receiptNumber String   @unique
+  batchId       String
+  itemId        String
+  warehouseId   String
+  locationId    String?
+  quantity      Decimal  @db.Decimal(12, 2)
+  status        String   @default("COMPLETED")
+  remarks       String?
+  receivedById  String
+  createdAt     DateTime @default(now())
+
+  batch      ProductionBatch @relation(fields: [batchId], references: [id])
+  item       Item            @relation(fields: [itemId], references: [id])
+  warehouse  Warehouse       @relation(fields: [warehouseId], references: [id])
+  receivedBy User            @relation(fields: [receivedById], references: [id])
+}
+
+model WarehouseTransfer {
+  id            String    @id @default(uuid())
+  itemId        String
+  batchId       String?
+  sourceWhId    String
+  sourceLocId   String?
+  destWhId      String
+  destLocId     String?
+  requestedQty  Decimal   @db.Decimal(12, 2)
+  shippedQty    Decimal?  @db.Decimal(12, 2)
+  receivedQty   Decimal?  @db.Decimal(12, 2)
+  status        String    @default("REQUESTED") // REQUESTED, APPROVED, IN_TRANSIT, RECEIVED, CANCELLED
+  reason        String?
+  requestedById String
+  createdAt     DateTime  @default(now())
+  dispatchedAt  DateTime?
+  receivedAt    DateTime?
+
+  item        Item            @relation(fields: [itemId], references: [id])
+  batch       InventoryBatch? @relation(fields: [batchId], references: [id])
+  sourceWh    Warehouse       @relation("SourceWh", fields: [sourceWhId], references: [id])
+  destWh      Warehouse       @relation("DestWh", fields: [destWhId], references: [id])
+  requestedBy User            @relation(fields: [requestedById], references: [id])
+}
+
+model StockCount {
+  id          String    @id @default(uuid())
+  warehouseId String
+  status      String    @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, REJECTED
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  approvedBy  String?
+  approvedAt  DateTime?
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  creator   User      @relation("CountCreator", fields: [createdBy], references: [id])
+  approver  User?     @relation("CountApprover", fields: [approvedBy], references: [id])
+
+  items StockCountItem[]
+}
+
+model StockCountItem {
+  id          String  @id @default(uuid())
+  countId     String
+  itemId      String
+  batchId     String?
+  locationId  String?
+  systemQty   Decimal @db.Decimal(12, 2)
+  physicalQty Decimal @db.Decimal(12, 2)
+  varianceQty Decimal @db.Decimal(12, 2)
+  reasonCode  String?
+
+  count StockCount @relation(fields: [countId], references: [id], onDelete: Cascade)
+  item  Item       @relation(fields: [itemId], references: [id])
+}
+
+model FinishedGoodsReservation {
+  id        String   @id @default(uuid())
+  orderId   String // e.g. Customer Order ID
+  itemId    String
+  batchId   String?
+  quantity  Decimal  @db.Decimal(12, 2)
+  status    String   @default("RESERVED") // RESERVED, CONSUMED, RELEASED
+  createdAt DateTime @default(now())
+
+  item Item @relation(fields: [itemId], references: [id])
 }

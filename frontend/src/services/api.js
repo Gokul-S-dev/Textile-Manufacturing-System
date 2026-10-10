@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Default to the user's specified IP, with fallback to localhost or custom configured URL
 const STORAGE_KEY_API_URL = 'textail_api_base_url';
-const DEFAULT_API_BASE_URL = 'http://172.17.40.17:5000/api';
+const DEFAULT_API_BASE_URL = 'http://localhost:5000/api/v1';
 
 export const getApiBaseUrl = () => {
   return localStorage.getItem(STORAGE_KEY_API_URL) || DEFAULT_API_BASE_URL;

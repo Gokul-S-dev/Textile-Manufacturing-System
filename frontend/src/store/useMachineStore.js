@@ -1,379 +1,91 @@
 import { create } from 'zustand';
 import { useAuditStore } from './useAuditStore';
-
-// Exact 20 machines breakdown:
-// 14 Running, 3 Idle, 2 Breakdown, 1 Maintenance
-const initialMachines = [
-  // 14 RUNNING:
-  {
-    id: 'M-W01',
-    code: 'W-01',
-    name: 'Picanol OmniPlus-i Loom 01',
-    type: 'Weaving',
-    status: 'RUNNING',
-    currentOrder: 'ORD-36',
-    currentWorker: 'Ravi Shankar (Op O-01)',
-    currentWorkerId: 'W-001',
-    productionTodayMeters: 410,
-    downtimeHours: 0.0,
-    rpm: 950,
-    efficiency: 94.2,
-    location: 'Weaving Shed A',
-  },
-  {
-    id: 'M-W02',
-    code: 'W-02',
-    name: 'Picanol OmniPlus-i Loom 02',
-    type: 'Weaving',
-    status: 'RUNNING',
-    currentOrder: 'ORD-28',
-    currentWorker: 'Manoj Tiwari (Op O-02)',
-    currentWorkerId: 'W-003',
-    productionTodayMeters: 435,
-    downtimeHours: 0.2,
-    rpm: 940,
-    efficiency: 92.8,
-    location: 'Weaving Shed A',
-  },
-  {
-    id: 'M-W03',
-    code: 'W-03',
-    name: 'Sulzer G6500 Rapier Loom 03',
-    type: 'Weaving',
-    status: 'RUNNING',
-    currentOrder: 'ORD-1024',
-    currentWorker: 'Amit Sharma (Op O-03)',
-    currentWorkerId: 'W-008',
-    productionTodayMeters: 380,
-    downtimeHours: 0.0,
-    rpm: 620,
-    efficiency: 96.0,
-    location: 'Weaving Shed A',
-  },
-  {
-    id: 'M-W04',
-    code: 'W-04',
-    name: 'Sulzer G6500 Rapier Loom 04',
-    type: 'Weaving',
-    status: 'RUNNING',
-    currentOrder: 'ORD-33',
-    currentWorker: 'Gopal Yadav (Op O-04)',
-    currentWorkerId: 'W-006',
-    productionTodayMeters: 365,
-    downtimeHours: 0.1,
-    rpm: 610,
-    efficiency: 91.5,
-    location: 'Weaving Shed A',
-  },
-  {
-    id: 'M-W05',
-    code: 'W-05',
-    name: 'Tsudakoma ZAX9200 Airjet 05',
-    type: 'Weaving',
-    status: 'RUNNING',
-    currentOrder: 'ORD-30',
-    currentWorker: 'Prakash Rao (Op O-05)',
-    currentWorkerId: 'W-007',
-    productionTodayMeters: 420,
-    downtimeHours: 0.0,
-    rpm: 920,
-    efficiency: 93.4,
-    location: 'Weaving Shed B',
-  },
-  {
-    id: 'M-W06',
-    code: 'W-06',
-    name: 'Bonas Electronic Jacquard 06',
-    type: 'Weaving',
-    status: 'RUNNING',
-    currentOrder: 'ORD-31',
-    currentWorker: 'Subhash Sen (Op O-06)',
-    currentWorkerId: 'W-012',
-    productionTodayMeters: 190,
-    downtimeHours: 0.3,
-    rpm: 480,
-    efficiency: 89.0,
-    location: 'Weaving Shed B',
-  },
-  {
-    id: 'M-S01',
-    code: 'S-01',
-    name: 'Rieter G38 Ring Spinning 01',
-    type: 'Spinning',
-    status: 'RUNNING',
-    currentOrder: 'ORD-25 (Yarn Lot)',
-    currentWorker: 'Vinod Meena (Op O-07)',
-    currentWorkerId: 'W-011',
-    productionTodayMeters: 520,
-    downtimeHours: 0.0,
-    rpm: 18500,
-    efficiency: 97.1,
-    location: 'Spinning Mill Hall',
-  },
-  {
-    id: 'M-S02',
-    code: 'S-02',
-    name: 'Rieter G38 Ring Spinning 02',
-    type: 'Spinning',
-    status: 'RUNNING',
-    currentOrder: 'ORD-34',
-    currentWorker: 'Sanjay Gupta (Op O-08)',
-    currentWorkerId: 'W-002',
-    productionTodayMeters: 490,
-    downtimeHours: 0.0,
-    rpm: 18200,
-    efficiency: 95.8,
-    location: 'Spinning Mill Hall',
-  },
-  {
-    id: 'M-S03',
-    code: 'S-03',
-    name: 'Rieter G38 Ring Spinning 03',
-    type: 'Spinning',
-    status: 'RUNNING',
-    currentOrder: 'ORD-1024 (Blend)',
-    currentWorker: 'Rakesh Chouhan (Op O-09)',
-    currentWorkerId: 'W-013',
-    productionTodayMeters: 510,
-    downtimeHours: 0.0,
-    rpm: 18400,
-    efficiency: 96.5,
-    location: 'Spinning Mill Hall',
-  },
-  {
-    id: 'M-S04',
-    code: 'S-04',
-    name: 'Rieter K48 Compact Spinning 04',
-    type: 'Spinning',
-    status: 'RUNNING',
-    currentOrder: 'ORD-32',
-    currentWorker: 'Deepak Patel (Op O-10)',
-    currentWorkerId: 'W-004',
-    productionTodayMeters: 480,
-    downtimeHours: 0.0,
-    rpm: 19100,
-    efficiency: 98.2,
-    location: 'Spinning Mill Hall',
-  },
-  {
-    id: 'M-S05',
-    code: 'S-05',
-    name: 'Rieter K48 Compact Spinning 05',
-    type: 'Spinning',
-    status: 'RUNNING',
-    currentOrder: 'ORD-37',
-    currentWorker: 'Santosh Jena (Op O-11)',
-    currentWorkerId: 'W-005',
-    productionTodayMeters: 475,
-    downtimeHours: 0.1,
-    rpm: 18900,
-    efficiency: 95.0,
-    location: 'Spinning Mill Hall',
-  },
-  {
-    id: 'M-D01',
-    code: 'D-01',
-    name: 'Fong High Temp Dyeing Vat 01',
-    type: 'Dyeing',
-    status: 'RUNNING',
-    currentOrder: 'ORD-29',
-    currentWorker: 'Kishore Lal (Op O-12)',
-    currentWorkerId: 'W-009',
-    productionTodayMeters: 350,
-    downtimeHours: 0.0,
-    rpm: 0,
-    efficiency: 93.0,
-    location: 'Dyeing & Finishing Wing',
-  },
-  {
-    id: 'M-D02',
-    code: 'D-02',
-    name: 'Thies Soft-Flow Dyeing Vat 02',
-    type: 'Dyeing',
-    status: 'RUNNING',
-    currentOrder: 'ORD-35',
-    currentWorker: 'Arjun Das (Op O-13)',
-    currentWorkerId: 'W-010',
-    productionTodayMeters: 325,
-    downtimeHours: 0.0,
-    rpm: 0,
-    efficiency: 91.0,
-    location: 'Dyeing & Finishing Wing',
-  },
-  {
-    id: 'M-Q01',
-    code: 'Q-01',
-    name: 'Uster Fabric Inspection Frame 01',
-    type: 'Quality Inspection',
-    status: 'RUNNING',
-    currentOrder: 'Inspection Batch A',
-    currentWorker: 'Sunil Verma (QA Lead)',
-    currentWorkerId: 'W-QA1',
-    productionTodayMeters: 290,
-    downtimeHours: 0.0,
-    rpm: 0,
-    efficiency: 98.5,
-    location: 'Quality Inspection Bay',
-  },
-
-  // 3 IDLE:
-  {
-    id: 'M-S06',
-    code: 'S-06',
-    name: 'Rieter G38 Ring Spinning 06',
-    type: 'Spinning',
-    status: 'IDLE',
-    currentOrder: 'None (Awaiting Roving Lot)',
-    currentWorker: 'Unassigned',
-    currentWorkerId: null,
-    productionTodayMeters: 0,
-    downtimeHours: 5.5,
-    rpm: 0,
-    efficiency: 0,
-    location: 'Spinning Mill Hall',
-  },
-  {
-    id: 'M-D03',
-    code: 'D-03',
-    name: 'Sclavos Athena Dyeing Vat 03',
-    type: 'Dyeing',
-    status: 'IDLE',
-    currentOrder: 'None (Batch Changeover)',
-    currentWorker: 'Unassigned',
-    currentWorkerId: null,
-    productionTodayMeters: 0,
-    downtimeHours: 3.2,
-    rpm: 0,
-    efficiency: 0,
-    location: 'Dyeing & Finishing Wing',
-  },
-  {
-    id: 'M-Q02',
-    code: 'Q-02',
-    name: 'Shelton Rolling Inspection Frame 02',
-    type: 'Quality Inspection',
-    status: 'IDLE',
-    currentOrder: 'None (Shift Handover)',
-    currentWorker: 'Unassigned',
-    currentWorkerId: null,
-    productionTodayMeters: 0,
-    downtimeHours: 1.8,
-    rpm: 0,
-    efficiency: 0,
-    location: 'Quality Inspection Bay',
-  },
-
-  // 2 BREAKDOWN:
-  {
-    id: 'M-W07',
-    code: 'W-07',
-    name: 'Picanol Airjet Loom W-07',
-    type: 'Weaving',
-    status: 'BREAKDOWN',
-    currentOrder: 'ORD-25 (Zara Summer Tee)',
-    currentWorker: 'Ramesh Kumar (Operator O-15)',
-    currentWorkerId: 'W-015',
-    productionTodayMeters: 140, // Produced before failure
-    downtimeHours: 4.2,
-    rpm: 0,
-    efficiency: 42.0,
-    location: 'Weaving Shed A',
-    breakdownReason: 'Weft insertion sensor fault & warp yarn tension unevenness (Produced defective roll R-102)',
-  },
-  {
-    id: 'M-W08',
-    code: 'W-08',
-    name: 'Picanol Airjet Loom W-08',
-    type: 'Weaving',
-    status: 'BREAKDOWN',
-    currentOrder: 'None',
-    currentWorker: 'Om Prakash (Operator O-14)',
-    currentWorkerId: 'W-014',
-    productionTodayMeters: 70,
-    downtimeHours: 6.0,
-    rpm: 0,
-    efficiency: 20.0,
-    location: 'Weaving Shed B',
-    breakdownReason: 'Main drive servo motor temperature overload error code E-404',
-  },
-
-  // 1 MAINTENANCE:
-  {
-    id: 'M-D04',
-    code: 'D-04',
-    name: 'Thies Soft-Flow Dyeing Vat 04',
-    type: 'Dyeing',
-    status: 'MAINTENANCE',
-    currentOrder: 'None',
-    currentWorker: 'Maintenance Team Alpha',
-    currentWorkerId: 'M-TECH1',
-    productionTodayMeters: 0,
-    downtimeHours: 8.0,
-    rpm: 0,
-    efficiency: 0,
-    location: 'Dyeing & Finishing Wing',
-    breakdownReason: 'Bi-monthly scheduled chemical descaling and heating element recalibration',
-  },
-];
+import { machinesService } from '../services/machinesService';
+import { workforceService } from '../services/workforceService';
 
 export const useMachineStore = create((set, get) => ({
-  machines: initialMachines,
+  machines: [],
+  isLoading: false,
 
-  // Dashboard counts matching requirement exactly:
-  // Total: 20, Running: 14, Idle: 3, Breakdown: 2, Maintenance: 1
+  fetchMachines: async () => {
+    set({ isLoading: true });
+    try {
+      const data = await machinesService.getMachines();
+      set({ machines: data, isLoading: false });
+    } catch (error) {
+      console.error('Failed to fetch machines', error);
+      set({ isLoading: false, machines: [] });
+    }
+  },
+
   getTotalMachinesCount: () => get().machines.length,
   getRunningCount: () => get().machines.filter((m) => m.status === 'RUNNING').length,
   getIdleCount: () => get().machines.filter((m) => m.status === 'IDLE').length,
   getBreakdownCount: () => get().machines.filter((m) => m.status === 'BREAKDOWN').length,
   getMaintenanceCount: () => get().machines.filter((m) => m.status === 'MAINTENANCE').length,
 
-  // Total factory floor output today: 4,850 Meters (matches requirement 10!)
   getTodayTotalOutputMeters: () => {
     return get().machines.reduce((sum, m) => sum + (Number(m.productionTodayMeters) || 0), 0);
   },
 
-  updateMachineStatus: (machineId, newStatus, reason, changedBy = 'Production Manager') => {
-    const machine = get().machines.find((m) => m.id === machineId || m.code === machineId);
-    if (!machine) return;
+  updateMachineStatus: async (machineId, newStatus, reason, changedBy = 'Production Manager') => {
+    try {
+      if (newStatus === 'IDLE' && get().machines.find(m => m.id === machineId)?.status === 'BREAKDOWN') {
+        await machinesService.completeMaintenance(machineId, reason);
+      } else {
+        await machinesService.updateStatus(machineId, newStatus);
+      }
+      
+      set((state) => ({
+        machines: state.machines.map((m) => {
+          if (m.id === machineId || m.code === machineId) {
+            return {
+              ...m,
+              status: newStatus,
+              breakdownReason: newStatus === 'BREAKDOWN' ? reason || 'Reported breakdown' : null,
+            };
+          }
+          return m;
+        }),
+      }));
 
-    const oldStatus = machine.status;
-
-    set((state) => ({
-      machines: state.machines.map((m) => {
-        if (m.id === machineId || m.code === machineId) {
-          return {
-            ...m,
-            status: newStatus,
-            breakdownReason: newStatus === 'BREAKDOWN' ? reason || 'Reported breakdown' : null,
-          };
-        }
-        return m;
-      }),
-    }));
-
-    // Record audit trail event
-    useAuditStore.getState().addLog({
-      userName: changedBy,
-      userRole: 'PRODUCTION_MANAGER',
-      action: 'MACHINE_STATUS_CHANGE',
-      target: `Machine ${machine.code}`,
-      details: `Status changed: ${oldStatus} → ${newStatus}. Reason: ${reason || 'Operator floor report'}.`,
-      badgeColor: newStatus === 'BREAKDOWN' ? 'red' : newStatus === 'RUNNING' ? 'green' : 'blue',
-    });
+      useAuditStore.getState().addLog({
+        userName: changedBy,
+        userRole: 'PRODUCTION_MANAGER',
+        action: 'MACHINE_STATUS_CHANGE',
+        target: `Machine ${machineId}`,
+        details: `Status changed to ${newStatus}. Reason: ${reason || 'Operator floor report'}.`,
+        badgeColor: newStatus === 'BREAKDOWN' ? 'red' : newStatus === 'RUNNING' ? 'green' : 'blue',
+      });
+    } catch (error) {
+      console.error('Failed to update machine status', error);
+    }
   },
 
-  assignWorkerToMachine: (machineId, workerName, workerId) => {
-    set((state) => ({
-      machines: state.machines.map((m) => {
-        if (m.id === machineId || m.code === machineId) {
-          return {
-            ...m,
-            currentWorker: workerName,
-            currentWorkerId: workerId,
-          };
-        }
-        return m;
-      }),
-    }));
+  assignWorkerToMachine: async (machineId, workerName, workerId) => {
+    try {
+      // Assuming a generic runId or fetching from current state if available.
+      // For now we map it directly.
+      await workforceService.assignWorker({
+        employeeId: workerId,
+        runId: machineId, // The UI currently maps machine to worker assignment.
+        shiftCode: 'SHIFT-DAY'
+      });
+      
+      set((state) => ({
+        machines: state.machines.map((m) => {
+          if (m.id === machineId || m.code === machineId) {
+            return {
+              ...m,
+              currentWorker: workerName,
+              currentWorkerId: workerId,
+            };
+          }
+          return m;
+        }),
+      }));
+    } catch (error) {
+      console.error('Failed to assign worker', error);
+    }
   },
 }));

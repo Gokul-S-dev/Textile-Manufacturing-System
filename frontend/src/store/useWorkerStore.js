@@ -1,226 +1,20 @@
 import { create } from 'zustand';
-
-const initialWorkers = [
-  {
-    id: 'W-015',
-    code: 'O-15',
-    name: 'Ramesh Kumar',
-    role: 'Senior Airjet Loom Operator',
-    department: 'Weaving',
-    assignedMachine: 'Picanol Airjet Loom W-07',
-    assignedMachineCode: 'W-07',
-    shift: 'Shift A (06:00 - 14:00)',
-    status: 'PRESENT',
-    workingHours: 8,
-    overtimeHours: 2.5,
-    basicWage: 850,
-    hourlyOtRate: 150,
-    incentives: 200,
-    phone: '+91 98765 11015',
-    joinDate: '2022-04-10',
-  },
-  {
-    id: 'W-001',
-    code: 'O-01',
-    name: 'Ravi Shankar',
-    role: 'Loom Operator Grade I',
-    department: 'Weaving',
-    assignedMachine: 'Picanol OmniPlus Loom W-01',
-    assignedMachineCode: 'W-01',
-    shift: 'Shift A (06:00 - 14:00)',
-    status: 'PRESENT',
-    workingHours: 8,
-    overtimeHours: 1.0,
-    basicWage: 800,
-    hourlyOtRate: 140,
-    incentives: 150,
-    phone: '+91 98765 11001',
-    joinDate: '2021-08-15',
-  },
-  {
-    id: 'W-003',
-    code: 'O-02',
-    name: 'Manoj Tiwari',
-    role: 'Loom Operator Grade I',
-    department: 'Weaving',
-    assignedMachine: 'Picanol OmniPlus Loom W-02',
-    assignedMachineCode: 'W-02',
-    shift: 'Shift A (06:00 - 14:00)',
-    status: 'PRESENT',
-    workingHours: 8,
-    overtimeHours: 2.0,
-    basicWage: 800,
-    hourlyOtRate: 140,
-    incentives: 180,
-    phone: '+91 98765 11003',
-    joinDate: '2023-01-20',
-  },
-  {
-    id: 'W-008',
-    code: 'O-03',
-    name: 'Amit Sharma',
-    role: 'Rapier Specialist Operator',
-    department: 'Weaving',
-    assignedMachine: 'Sulzer Rapier Loom W-03',
-    assignedMachineCode: 'W-03',
-    shift: 'Shift A (06:00 - 14:00)',
-    status: 'PRESENT',
-    workingHours: 8,
-    overtimeHours: 0.5,
-    basicWage: 850,
-    hourlyOtRate: 150,
-    incentives: 250,
-    phone: '+91 98765 11008',
-    joinDate: '2020-11-05',
-  },
-  {
-    id: 'W-006',
-    code: 'O-04',
-    name: 'Gopal Yadav',
-    role: 'Rapier Operator',
-    department: 'Weaving',
-    assignedMachine: 'Sulzer Rapier Loom W-04',
-    assignedMachineCode: 'W-04',
-    shift: 'Shift B (14:00 - 22:00)',
-    status: 'PRESENT',
-    workingHours: 8,
-    overtimeHours: 0,
-    basicWage: 780,
-    hourlyOtRate: 135,
-    incentives: 100,
-    phone: '+91 98765 11006',
-    joinDate: '2024-02-12',
-  },
-  {
-    id: 'W-007',
-    code: 'O-05',
-    name: 'Prakash Rao',
-    role: 'Airjet Operator',
-    department: 'Weaving',
-    assignedMachine: 'Tsudakoma Loom W-05',
-    assignedMachineCode: 'W-05',
-    shift: 'Shift A (06:00 - 14:00)',
-    status: 'PRESENT',
-    workingHours: 8,
-    overtimeHours: 1.5,
-    basicWage: 820,
-    hourlyOtRate: 145,
-    incentives: 160,
-    phone: '+91 98765 11007',
-    joinDate: '2022-09-01',
-  },
-  {
-    id: 'W-012',
-    code: 'O-06',
-    name: 'Subhash Sen',
-    role: 'Master Jacquard Craftsman',
-    department: 'Weaving',
-    assignedMachine: 'Bonas Jacquard Loom W-06',
-    assignedMachineCode: 'W-06',
-    shift: 'Shift A (06:00 - 14:00)',
-    status: 'PRESENT',
-    workingHours: 8,
-    overtimeHours: 3.0,
-    basicWage: 950,
-    hourlyOtRate: 175,
-    incentives: 300,
-    phone: '+91 98765 11012',
-    joinDate: '2019-06-18',
-  },
-  {
-    id: 'W-011',
-    code: 'O-07',
-    name: 'Vinod Meena',
-    role: 'Ring Spinning Technician',
-    department: 'Spinning',
-    assignedMachine: 'Rieter Ring Spinning S-01',
-    assignedMachineCode: 'S-01',
-    shift: 'Shift A (06:00 - 14:00)',
-    status: 'PRESENT',
-    workingHours: 8,
-    overtimeHours: 1.0,
-    basicWage: 750,
-    hourlyOtRate: 130,
-    incentives: 120,
-    phone: '+91 98765 11011',
-    joinDate: '2023-05-14',
-  },
-  {
-    id: 'W-002',
-    code: 'O-08',
-    name: 'Sanjay Gupta',
-    role: 'Ring Spinning Operator',
-    department: 'Spinning',
-    assignedMachine: 'Rieter Ring Spinning S-02',
-    assignedMachineCode: 'S-02',
-    shift: 'Shift A (06:00 - 14:00)',
-    status: 'PRESENT',
-    workingHours: 8,
-    overtimeHours: 0,
-    basicWage: 750,
-    hourlyOtRate: 130,
-    incentives: 100,
-    phone: '+91 98765 11002',
-    joinDate: '2023-08-22',
-  },
-  {
-    id: 'W-009',
-    code: 'O-12',
-    name: 'Kishore Lal',
-    role: 'Master Dyes Chemist & Operator',
-    department: 'Dyeing',
-    assignedMachine: 'Fong High Temp Vat D-01',
-    assignedMachineCode: 'D-01',
-    shift: 'Shift A (06:00 - 14:00)',
-    status: 'PRESENT',
-    workingHours: 8,
-    overtimeHours: 2.0,
-    basicWage: 900,
-    hourlyOtRate: 160,
-    incentives: 220,
-    phone: '+91 98765 11009',
-    joinDate: '2021-03-10',
-  },
-  {
-    id: 'W-014',
-    code: 'O-14',
-    name: 'Om Prakash',
-    role: 'Loom Technician',
-    department: 'Weaving',
-    assignedMachine: 'Picanol Airjet Loom W-08',
-    assignedMachineCode: 'W-08',
-    shift: 'Shift B (14:00 - 22:00)',
-    status: 'ABSENT',
-    workingHours: 0,
-    overtimeHours: 0,
-    basicWage: 800,
-    hourlyOtRate: 140,
-    incentives: 0,
-    phone: '+91 98765 11014',
-    joinDate: '2022-12-01',
-  },
-  {
-    id: 'W-QA1',
-    code: 'QA-01',
-    name: 'Sunil Verma',
-    role: 'Chief Quality Inspector',
-    department: 'Quality Control',
-    assignedMachine: 'Uster Inspection Frame Q-01',
-    assignedMachineCode: 'Q-01',
-    shift: 'Shift A (06:00 - 14:00)',
-    status: 'PRESENT',
-    workingHours: 8,
-    overtimeHours: 2.0,
-    basicWage: 920,
-    hourlyOtRate: 165,
-    incentives: 250,
-    phone: '+91 98765 11099',
-    joinDate: '2020-02-15',
-  },
-];
+import { workforceService } from '../services/workforceService';
 
 export const useWorkerStore = create((set, get) => ({
-  workers: initialWorkers,
+  workers: [],
+  isLoading: false,
+
+  fetchWorkers: async () => {
+    set({ isLoading: true });
+    try {
+      const data = await workforceService.getEmployees();
+      set({ workers: data, isLoading: false });
+    } catch (error) {
+      console.error('Failed to fetch workers', error);
+      set({ workers: [], isLoading: false });
+    }
+  },
 
   // Calculate daily wage for a worker: Basic + Overtime + Incentives
   calculateWorkerWage: (worker) => {
@@ -236,20 +30,32 @@ export const useWorkerStore = create((set, get) => ({
     return get().workers.reduce((sum, w) => sum + get().calculateWorkerWage(w), 0);
   },
 
-  updateAttendance: (workerId, status, workingHours, overtimeHours) => {
-    set((state) => ({
-      workers: state.workers.map((w) => {
-        if (w.id === workerId) {
-          return {
-            ...w,
-            status,
-            workingHours: status === 'ABSENT' ? 0 : Number(workingHours),
-            overtimeHours: status === 'ABSENT' ? 0 : Number(overtimeHours),
-          };
-        }
-        return w;
-      }),
-    }));
+  updateAttendance: async (workerId, status, workingHours, overtimeHours, shiftId) => {
+    try {
+      if (status !== 'ABSENT' && shiftId) {
+        await workforceService.checkInAttendance({
+          employeeId: workerId,
+          shiftId: shiftId,
+          date: new Date().toISOString().split('T')[0]
+        });
+      }
+      
+      set((state) => ({
+        workers: state.workers.map((w) => {
+          if (w.id === workerId) {
+            return {
+              ...w,
+              status,
+              workingHours: status === 'ABSENT' ? 0 : Number(workingHours),
+              overtimeHours: status === 'ABSENT' ? 0 : Number(overtimeHours),
+            };
+          }
+          return w;
+        }),
+      }));
+    } catch (error) {
+      console.error('Failed to update attendance', error);
+    }
   },
 
   updateWageParameters: (workerId, basicWage, hourlyOtRate, incentives) => {
