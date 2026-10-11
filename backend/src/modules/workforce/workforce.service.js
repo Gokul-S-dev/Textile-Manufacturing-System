@@ -1,8 +1,32 @@
 import { logAudit } from '../audit/audit.service.js';
 import prisma from '../../config/db.js';
 
-// ================= WORKFORCE =================
-export const listEmployees = async () => prisma.employee.findMany();
+export const listEmployees = async () => prisma.employee.findMany({
+  include: {
+    attendance: { orderBy: { date: 'desc' }, take: 1 },
+    assignments: { take: 1 }
+  },
+  orderBy: { workerId: 'asc' }
+});
+
+export const createEmployee = async (data, userId) => {
+  const count = await prisma.employee.count();
+  const workerId = data.workerId || `EMP-${String(count + 1).padStart(3, '0')}`;
+  const employee = await prisma.employee.create({
+    data: {
+      workerId,
+      name: data.name,
+      role: data.role || 'OPERATOR',
+      hourlyRate: Number(data.hourlyRate) || 16,
+      isActive: data.isActive !== undefined ? data.isActive : true
+    }
+  });
+  if (userId) {
+    await logAudit({ userId, action: 'EMPLOYEE_CREATED', entity: 'Employee', entityId: employee.id });
+  }
+  return employee;
+};
+
 
 export const checkInAttendance = async (employeeId, shiftId, date, userId) => {
   return await prisma.$transaction(async (tx) => {
