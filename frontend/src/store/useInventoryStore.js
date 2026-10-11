@@ -133,8 +133,20 @@ export const useInventoryStore = create((set, get) => ({
     return get().items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
   },
 
+  getAllocatedStockKg: () => {
+    return get().items.reduce((sum, item) => sum + (Number(item.allocated) || 0), 0);
+  },
+
+  getAvailableStockKg: () => {
+    const total = get().getTotalStockKg();
+    const allocated = get().getAllocatedStockKg();
+    return Math.max(0, total - allocated);
+  },
+
   getLowStockItems: () => {
-    return get().items.filter((item) => (Number(item.quantity) || 0) <= (Number(item.minStock) || 0));
+    return get().items.filter(
+      (item) => (Number(item.quantity) || 0) <= (Number(item.minStock) || 0) || (Number(item.available) || 0) <= (Number(item.minStock) || 0)
+    );
   },
 
   fetchItems: async () => {
@@ -148,6 +160,10 @@ export const useInventoryStore = create((set, get) => ({
           const totalReserved = bItem.balances?.reduce((sum, b) => sum + Number(b.reservedQuantity || 0), 0) || 0;
           const match = currentItems.find((i) => i.id === bItem.id || i.sku === bItem.sku);
 
+          const finalQty = totalQty > 0 ? totalQty : (Number(match?.quantity) || 500);
+          const finalAlloc = totalReserved > 0 ? totalReserved : (Number(match?.allocated) || 100);
+          const finalAvail = Math.max(0, finalQty - finalAlloc);
+
           return {
             id: bItem.id || `item-b-${idx}`,
             sku: bItem.sku || `RAW-SKU-00${idx + 1}`,
@@ -155,9 +171,9 @@ export const useInventoryStore = create((set, get) => ({
             type: bItem.type || 'RAW_MATERIAL',
             yarnType: bItem.description || bItem.name,
             colour: bItem.colour || match?.colour || 'Standard White',
-            quantity: totalQty > 0 ? totalQty : (match?.quantity || 500),
-            allocated: totalReserved > 0 ? totalReserved : (match?.allocated || 100),
-            available: totalQty > 0 ? Math.max(0, totalQty - totalReserved) : (match?.available || 400),
+            quantity: finalQty,
+            allocated: finalAlloc,
+            available: finalAvail,
             unitOfMeasure: bItem.unitOfMeasure || 'kg',
             minStock: Number(bItem.minStock) || match?.minStock || 100,
             supplierName: bItem.supplier?.name || match?.supplierName || 'Vardhman Textiles Ltd',
@@ -170,7 +186,14 @@ export const useInventoryStore = create((set, get) => ({
         const allItemIds = new Set(backendItems.map((b) => b.id));
         currentItems.forEach((ci) => {
           if (!allItemIds.has(ci.id)) {
-            backendItems.push(ci);
+            const qty = Number(ci.quantity) || 0;
+            const alloc = Number(ci.allocated) || 0;
+            backendItems.push({
+              ...ci,
+              quantity: qty,
+              allocated: alloc,
+              available: Math.max(0, qty - alloc),
+            });
           }
         });
 
@@ -208,10 +231,13 @@ export const useInventoryStore = create((set, get) => ({
           targetFound = true;
           targetName = item.name;
           const newQty = Math.max(0, Number(item.quantity) - parsedQty);
-          const newAvail = Math.max(0, Number(item.available) - parsedQty);
+          // Also release allocation if it was previously reserved
+          const newAlloc = Math.max(0, Number(item.allocated) - parsedQty);
+          const newAvail = Math.max(0, newQty - newAlloc);
           return {
             ...item,
             quantity: newQty,
+            allocated: newAlloc,
             available: newAvail,
           };
         }
@@ -225,9 +251,10 @@ export const useInventoryStore = create((set, get) => ({
         const [first, ...rest] = state.items;
         targetName = first.name;
         const newQty = Math.max(0, Number(first.quantity) - parsedQty);
-        const newAvail = Math.max(0, Number(first.available) - parsedQty);
+        const newAlloc = Math.max(0, Number(first.allocated) - parsedQty);
+        const newAvail = Math.max(0, newQty - newAlloc);
         return {
-          items: [{ ...first, quantity: newQty, available: newAvail }, ...rest],
+          items: [{ ...first, quantity: newQty, allocated: newAlloc, available: newAvail }, ...rest],
         };
       });
     }
@@ -271,10 +298,12 @@ export const useInventoryStore = create((set, get) => ({
         updatedItems = state.items.map((i) => {
           if (i.id === itemId) {
             const newQty = Number(i.quantity) + parsedQty;
-            const newAvail = Number(i.available) + parsedQty;
+            const newAlloc = Number(i.allocated) || 0;
+            const newAvail = Math.max(0, newQty - newAlloc);
             return {
               ...i,
               quantity: newQty,
+              allocated: newAlloc,
               available: newAvail,
               dateReceived: new Date().toISOString().split('T')[0],
             };
@@ -327,8 +356,9 @@ export const useInventoryStore = create((set, get) => ({
         if (item.id === itemId) {
           const delta = type === 'RECEIPT' ? parsedQty : -parsedQty;
           const newQty = Math.max(0, Number(item.quantity) + delta);
-          const newAvail = Math.max(0, Number(item.available) + delta);
-          return { ...item, quantity: newQty, available: newAvail };
+          const newAlloc = Math.max(0, Number(item.allocated) || 0);
+          const newAvail = Math.max(0, newQty - newAlloc);
+          return { ...item, quantity: newQty, allocated: newAlloc, available: newAvail };
         }
         return item;
       }),
@@ -352,7 +382,8 @@ export const useInventoryStore = create((set, get) => ({
       items: state.items.map((item) => {
         if (item.id === itemId) {
           const newAlloc = Number(item.allocated) + parsedQty;
-          const newAvail = Math.max(0, Number(item.available) - parsedQty);
+          const newQty = Number(item.quantity) || 0;
+          const newAvail = Math.max(0, newQty - newAlloc);
           return { ...item, allocated: newAlloc, available: newAvail };
         }
         return item;

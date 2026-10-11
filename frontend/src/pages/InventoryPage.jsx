@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useInventoryStore } from '../store/useInventoryStore';
 import { useNotificationStore } from '../store/useNotificationStore';
 import { useAuditStore } from '../store/useAuditStore';
@@ -66,8 +66,28 @@ export default function InventoryPage() {
     fetchItems();
   }, [fetchItems]);
 
-  const totalStockKg = getTotalStockKg();
-  const lowStockItems = getLowStockItems();
+  // Reactive real-time inventory calculations
+  const totalStockKg = useMemo(() => {
+    return items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+  }, [items]);
+
+  const totalAllocatedKg = useMemo(() => {
+    return items.reduce((sum, item) => sum + (Number(item.allocated) || 0), 0);
+  }, [items]);
+
+  const totalAvailableKg = useMemo(() => {
+    return Math.max(0, totalStockKg - totalAllocatedKg);
+  }, [totalStockKg, totalAllocatedKg]);
+
+  const lowStockItems = useMemo(() => {
+    return items.filter((item) => {
+      const qty = Number(item.quantity) || 0;
+      const alloc = Number(item.allocated) || 0;
+      const avail = Math.max(0, qty - alloc);
+      const min = Number(item.minStock) || 0;
+      return qty <= min || avail <= min;
+    });
+  }, [items]);
 
   const handleReceiveYarn = async (e) => {
     e.preventDefault();
@@ -156,7 +176,11 @@ export default function InventoryPage() {
       item.yarnType.toLowerCase().includes(search.toLowerCase()) ||
       item.supplierName.toLowerCase().includes(search.toLowerCase());
 
-    const isLow = Number(item.quantity) <= Number(item.minStock);
+    const qty = Number(item.quantity) || 0;
+    const alloc = Number(item.allocated) || 0;
+    const avail = Math.max(0, qty - alloc);
+    const min = Number(item.minStock) || 0;
+    const isLow = qty <= min || avail <= min;
     return matchesSearch && (!filterLowStockOnly || isLow);
   });
 
@@ -235,29 +259,55 @@ export default function InventoryPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-3xl bg-white p-5 shadow-sm border border-slate-100/80">
-          <span className="text-[11px] font-black uppercase text-slate-400">Total Yarn Stock</span>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase text-slate-400">Total Yarn Stock</span>
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-400"></span> Live Stock
+            </span>
+          </div>
           <p className="text-3xl font-black text-slate-800 mt-1">{totalStockKg.toLocaleString()} KG</p>
           <p className="text-xs text-slate-400 mt-0.5">Everest Mill floor inventory</p>
         </div>
 
         <div className="rounded-3xl bg-white p-5 shadow-sm border border-slate-100/80">
-          <span className="text-[11px] font-black uppercase text-slate-400">Allocated to Active Jobs</span>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase text-slate-400">Allocated to Active Jobs</span>
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#00838f] bg-cyan-50 px-2 py-0.5 rounded-full">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#00bcd4] animate-pulse"></span> Active Looms
+            </span>
+          </div>
           <p className="text-3xl font-black text-[#00acc1] mt-1">
-            {items.reduce((acc, i) => acc + (Number(i.allocated) || 0), 0).toLocaleString()} KG
+            {totalAllocatedKg.toLocaleString()} KG
           </p>
           <p className="text-xs text-slate-400 mt-0.5">Reserved for current looms</p>
         </div>
 
         <div className="rounded-3xl bg-white p-5 shadow-sm border border-slate-100/80">
-          <span className="text-[11px] font-black uppercase text-slate-400">Available Free Stock</span>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase text-slate-400">Available Free Stock</span>
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Real-Time Balance
+            </span>
+          </div>
           <p className="text-3xl font-black text-emerald-600 mt-1">
-            {items.reduce((acc, i) => acc + (Number(i.available) || 0), 0).toLocaleString()} KG
+            {totalAvailableKg.toLocaleString()} KG
           </p>
           <p className="text-xs text-slate-400 mt-0.5">Ready for new buyer bookings</p>
         </div>
 
         <div className="rounded-3xl bg-white p-5 shadow-sm border border-slate-100/80">
-          <span className="text-[11px] font-black uppercase text-slate-400">Low Stock SKUs</span>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase text-slate-400">Low Stock SKUs</span>
+            {lowStockItems.length > 0 ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full">
+                <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping"></span> Action Needed
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                Optimal
+              </span>
+            )}
+          </div>
           <p className="text-3xl font-black text-rose-600 mt-1">{lowStockItems.length} Items</p>
           <p className="text-xs text-slate-400 mt-0.5">Purchase order required</p>
         </div>
@@ -303,7 +353,11 @@ export default function InventoryPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredItems.map((item) => {
-                const isLow = Number(item.quantity) <= Number(item.minStock);
+                const itemQty = Number(item.quantity) || 0;
+                const itemAlloc = Number(item.allocated) || 0;
+                const itemAvail = Math.max(0, itemQty - itemAlloc);
+                const itemMin = Number(item.minStock) || 0;
+                const isLow = itemQty <= itemMin || itemAvail <= itemMin;
 
                 return (
                   <tr
@@ -331,13 +385,13 @@ export default function InventoryPage() {
                     </td>
 
                     <td className="px-5 py-4 font-black text-slate-800 text-sm">
-                      {Number(item.quantity).toLocaleString()} {item.unitOfMeasure}
+                      {itemQty.toLocaleString()} {item.unitOfMeasure}
                     </td>
 
                     <td className="px-5 py-4 font-semibold text-xs">
-                      <span className="text-[#00acc1]">{item.allocated} KG Allocated</span>
+                      <span className="text-[#00acc1]">{itemAlloc.toLocaleString()} KG Allocated</span>
                       <span className="text-slate-300 mx-1.5">|</span>
-                      <span className="text-emerald-600">{item.available} KG Free</span>
+                      <span className="text-emerald-600">{itemAvail.toLocaleString()} KG Free</span>
                     </td>
 
                     <td className="px-5 py-4">
