@@ -13,6 +13,27 @@ router.get('/employees', authorize('workforce.read'), async (req, res, next) => 
   } catch (error) { next(error); }
 });
 
+router.post('/employees', authorize('workforce.manage', 'workforce.assign', 'production.plan', 'production.create'), async (req, res, next) => {
+  try {
+    const employee = await workforceService.createEmployee(req.body, req.user?.id);
+    res.status(201).json(employee);
+  } catch (error) { next(error); }
+});
+
+router.put('/employees/:id', authorize('workforce.manage', 'workforce.assign', 'production.plan', 'production.create'), async (req, res, next) => {
+  try {
+    const employee = await workforceService.updateEmployee(req.params.id, req.body, req.user?.id);
+    res.status(200).json(employee);
+  } catch (error) { next(error); }
+});
+
+router.patch('/employees/:id', authorize('workforce.manage', 'workforce.assign', 'production.plan', 'production.create'), async (req, res, next) => {
+  try {
+    const employee = await workforceService.updateEmployee(req.params.id, req.body, req.user?.id);
+    res.status(200).json(employee);
+  } catch (error) { next(error); }
+});
+
 router.post('/shifts', authorize('workforce.manage'), async (req, res, next) => {
   try {
     const shift = await workforceService.createShift(req.body);

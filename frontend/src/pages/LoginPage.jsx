@@ -38,7 +38,8 @@ export default function LoginPage() {
           ? 'Signed in with demo verification (Backend offline mode).'
           : 'Authenticated securely with JWT token.',
       });
-      navigate('/dashboard');
+      const isBuyer = email.toLowerCase().includes('buyer') || useAuthStore.getState().activeRole === 'BUYER';
+      navigate(isBuyer ? '/buyer-portal' : '/dashboard');
     } else {
       addToast({
         type: 'error',
@@ -65,7 +66,7 @@ export default function LoginPage() {
         title: 'Authentication Successful',
         message: `Signed in as ${role}`,
       });
-      navigate('/dashboard');
+      navigate(role === 'BUYER' ? '/buyer-portal' : '/dashboard');
     } else {
       addToast({
         type: 'error',

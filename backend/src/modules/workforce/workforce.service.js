@@ -27,6 +27,32 @@ export const createEmployee = async (data, userId) => {
   return employee;
 };
 
+export const updateEmployee = async (id, data, userId) => {
+  let employee = await prisma.employee.findUnique({ where: { id } }).catch(() => null);
+  if (!employee) {
+    employee = await prisma.employee.findUnique({ where: { workerId: id } }).catch(() => null);
+    if (!employee) {
+      throw { status: 404, message: 'Employee not found' };
+    }
+  }
+
+  const updated = await prisma.employee.update({
+    where: { id: employee.id },
+    data: {
+      name: data.name !== undefined ? data.name : undefined,
+      role: data.role !== undefined ? data.role : undefined,
+      hourlyRate: data.hourlyRate !== undefined ? Number(data.hourlyRate) : undefined,
+      isActive: data.isActive !== undefined ? data.isActive : undefined,
+    }
+  });
+
+  if (userId) {
+    await logAudit({ userId, action: 'EMPLOYEE_UPDATED', entity: 'Employee', entityId: updated.id });
+  }
+
+  return updated;
+};
+
 
 export const checkInAttendance = async (employeeId, shiftId, date, userId) => {
   return await prisma.$transaction(async (tx) => {

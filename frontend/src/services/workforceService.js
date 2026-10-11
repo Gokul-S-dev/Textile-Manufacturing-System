@@ -5,6 +5,14 @@ export const workforceService = {
     const res = await api.get('/workforce/employees');
     return res.data;
   },
+  async createEmployee(data) {
+    const res = await api.post('/workforce/employees', data);
+    return res.data;
+  },
+  async updateEmployee(id, data) {
+    const res = await api.put(`/workforce/employees/${id}`, data);
+    return res.data;
+  },
   async createShift(data) {
     const res = await api.post('/workforce/shifts', data);
     return res.data;

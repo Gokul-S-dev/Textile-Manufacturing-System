@@ -17,7 +17,7 @@ import {
 import { Link } from 'react-router-dom';
 
 export default function OrdersPage() {
-  const { orders, fetchOrders, createOrder, updateOrderStatus, updateProductionProgress } = useOrderStore();
+  const { orders, fetchOrders, createOrder, updateOrderStatus, updateProductionProgress, startProductionJob } = useOrderStore();
   const { addToast } = useNotificationStore();
   const { addLog } = useAuditStore();
 
@@ -90,6 +90,24 @@ export default function OrdersPage() {
     });
   };
 
+  const handleStartJob = async (order) => {
+    const rawMaterialKg = order.yarnReservedKg || Math.round((Number(order.quantityMeters) || 1000) * 0.22);
+    await startProductionJob(order.id, order.rawMaterialItemId, rawMaterialKg);
+    addLog({
+      userName: 'Production Manager',
+      userRole: 'PRODUCTION_MANAGER',
+      action: 'JOB_STARTED',
+      target: order.orderNumber,
+      details: `Started production run for ${order.orderNumber}. Deducted ${rawMaterialKg}kg raw material stock.`,
+      badgeColor: 'blue',
+    });
+    addToast({
+      type: 'success',
+      title: 'Production Job Started 🏭',
+      message: `Job ${order.orderNumber} moved to IN_PRODUCTION. Deducted ${rawMaterialKg}kg raw yarn from stock.`,
+    });
+  };
+
   const filteredOrders = orders.filter((o) => {
     const matchesSearch =
       o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
@@ -142,17 +160,24 @@ export default function OrdersPage() {
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-          {['ALL', 'IN_PRODUCTION', 'PENDING', 'COMPLETED'].map((st) => (
+          {[
+            { key: 'ALL', label: 'All Orders' },
+            { key: 'AWAITING_COSTING', label: 'Needs Costing' },
+            { key: 'AWAITING_BUYER_APPROVAL', label: 'Waiting Buyer' },
+            { key: 'APPROVED_BY_BUYER', label: 'Buyer Approved' },
+            { key: 'IN_PRODUCTION', label: 'In Production' },
+            { key: 'COMPLETED', label: 'Completed' },
+          ].map((st) => (
             <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              className={`rounded-full px-4 py-1.5 text-xs font-bold whitespace-nowrap transition-all shadow-xs ${
-                statusFilter === st
+              key={st.key}
+              onClick={() => setStatusFilter(st.key)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold whitespace-nowrap transition-all shadow-xs ${
+                statusFilter === st.key
                   ? 'bg-[#00bcd4] text-white shadow-cyan-500/20'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              {st === 'ALL' ? 'All Orders' : st.replace('_', ' ')}
+              {st.label}
             </button>
           ))}
         </div>
@@ -210,9 +235,9 @@ export default function OrdersPage() {
                               Traceable R-102
                             </span>
                           )}
-                          {order.orderNumber === 'ORD-1024' && (
+                          {order.isBuyerOrder && (
                             <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[9px] font-bold text-purple-700">
-                              Buyer Portal
+                              Buyer Batch
                             </span>
                           )}
                         </div>
@@ -266,20 +291,34 @@ export default function OrdersPage() {
                               Trace
                             </Link>
                           )}
-                          {order.orderNumber === 'ORD-1024' && (
+                          {order.status === 'AWAITING_COSTING' && (
                             <Link
-                              to="/buyer-portal"
-                              className="rounded-full bg-cyan-50 px-3 py-1 text-[11px] font-bold text-[#00acc1] hover:bg-cyan-100"
+                              to="/production"
+                              className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-800 hover:bg-amber-100"
                             >
-                              Portal
+                              Cost Batch
+                            </Link>
+                          )}
+                          {order.status === 'AWAITING_BUYER_APPROVAL' && (
+                            <span className="rounded-full bg-purple-50 px-2.5 py-1 text-[10px] font-bold text-purple-700">
+                              Waiting Buyer
+                            </span>
+                          )}
+                          {order.status === 'APPROVED_BY_BUYER' && (
+                            <Link
+                              to="/production"
+                              className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-800 hover:bg-emerald-100"
+                            >
+                              Assign Loom
                             </Link>
                           )}
                           {order.status === 'PENDING' && (
                             <button
-                              onClick={() => handleStatusChange(order.id, 'IN_PRODUCTION')}
-                              className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700 hover:bg-amber-100"
+                              onClick={() => handleStartJob(order)}
+                              title="Start production job and issue raw material"
+                              className="rounded-full bg-cyan-50 px-3 py-1 text-[11px] font-bold text-[#00acc1] hover:bg-cyan-100 flex items-center gap-1 transition-colors"
                             >
-                              Start
+                              <span>Start Job</span>
                             </button>
                           )}
                         </div>

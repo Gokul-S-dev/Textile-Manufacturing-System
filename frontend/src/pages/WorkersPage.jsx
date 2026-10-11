@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWorkerStore } from '../store/useWorkerStore';
 import { useNotificationStore } from '../store/useNotificationStore';
 import { useAuditStore } from '../store/useAuditStore';
@@ -7,13 +7,31 @@ import {
   Users,
   Search,
   Calculator,
+  UserPlus,
+  Edit3,
+  CheckCircle,
+  Phone,
+  Briefcase,
+  Layers,
 } from 'lucide-react';
 
 export default function WorkersPage() {
-  const { workers, calculateWorkerWage, getTotalDailyWages, updateAttendance, updateWageParameters } =
-    useWorkerStore();
+  const {
+    workers,
+    fetchWorkers,
+    calculateWorkerWage,
+    getTotalDailyWages,
+    updateAttendance,
+    updateWageParameters,
+    updateEmployeeDetails,
+    addEmployee,
+  } = useWorkerStore();
   const { addToast } = useNotificationStore();
   const { addLog } = useAuditStore();
+
+  useEffect(() => {
+    fetchWorkers();
+  }, [fetchWorkers]);
 
   const [search, setSearch] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
@@ -30,8 +48,106 @@ export default function WorkersPage() {
   const [attHours, setAttHours] = useState(8);
   const [attOvertime, setAttOvertime] = useState(1.5);
 
+  // Edit Employee Details Modal
+  const [editDetailsWorker, setEditDetailsWorker] = useState(null);
+  const [detailName, setDetailName] = useState('');
+  const [detailCode, setDetailCode] = useState('');
+  const [detailRole, setDetailRole] = useState('');
+  const [detailDepartment, setDetailDepartment] = useState('Weaving');
+  const [detailAssignedMachine, setDetailAssignedMachine] = useState('');
+  const [detailShift, setDetailShift] = useState('Shift A (06:00 - 14:00)');
+  const [detailPhone, setDetailPhone] = useState('');
+  const [detailStatus, setDetailStatus] = useState('PRESENT');
+  const [detailBasicWage, setDetailBasicWage] = useState(800);
+  const [detailHourlyOtRate, setDetailHourlyOtRate] = useState(140);
+
+  // Add Employee Modal
+  const [isAddWorkerOpen, setIsAddWorkerOpen] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newCode, setNewCode] = useState('');
+  const [newRole, setNewRole] = useState('Loom Operator Grade I');
+  const [newDepartment, setNewDepartment] = useState('Weaving');
+  const [newAssignedMachine, setNewAssignedMachine] = useState('Picanol Airjet Loom W-01');
+  const [newShift, setNewShift] = useState('Shift A (06:00 - 14:00)');
+  const [newPhone, setNewPhone] = useState('+91 98000 12345');
+  const [newBasicWage, setNewBasicWage] = useState(820);
+  const [newHourlyOtRate, setNewHourlyOtRate] = useState(145);
+  const [newIncentives, setNewIncentives] = useState(150);
+
   const totalDailyPayout = getTotalDailyWages();
   const presentCount = workers.filter((w) => w.status === 'PRESENT').length;
+
+  const handleOpenEditDetails = (w) => {
+    setEditDetailsWorker(w);
+    setDetailName(w.name || '');
+    setDetailCode(w.code || '');
+    setDetailRole(w.role || '');
+    setDetailDepartment(w.department || 'Weaving');
+    setDetailAssignedMachine(w.assignedMachine || '');
+    setDetailShift(w.shift || 'Shift A (06:00 - 14:00)');
+    setDetailPhone(w.phone || '');
+    setDetailStatus(w.status || 'PRESENT');
+    setDetailBasicWage(w.basicWage || 800);
+    setDetailHourlyOtRate(w.hourlyOtRate || 140);
+  };
+
+  const handleSaveDetails = async (e) => {
+    e.preventDefault();
+    if (!editDetailsWorker) return;
+
+    await updateEmployeeDetails(editDetailsWorker.id, {
+      name: detailName,
+      code: detailCode,
+      role: detailRole,
+      department: detailDepartment,
+      assignedMachine: detailAssignedMachine,
+      shift: detailShift,
+      phone: detailPhone,
+      status: detailStatus,
+      basicWage: Number(detailBasicWage),
+      hourlyOtRate: Number(detailHourlyOtRate),
+    });
+
+    addToast({
+      type: 'success',
+      title: 'Employee Details Updated',
+      message: `Successfully updated profile and floor assignment for ${detailName}.`,
+    });
+
+    setEditDetailsWorker(null);
+  };
+
+  const handleCreateWorker = async (e) => {
+    e.preventDefault();
+    if (!newName) {
+      addToast({ type: 'warning', title: 'Name required', message: 'Please provide employee name.' });
+      return;
+    }
+
+    const created = await addEmployee({
+      name: newName,
+      code: newCode,
+      role: newRole,
+      department: newDepartment,
+      assignedMachine: newAssignedMachine,
+      shift: newShift,
+      phone: newPhone,
+      status: 'PRESENT',
+      basicWage: Number(newBasicWage),
+      hourlyOtRate: Number(newHourlyOtRate),
+      incentives: Number(newIncentives),
+    });
+
+    addToast({
+      type: 'success',
+      title: 'Employee Enrolled',
+      message: `New employee ${created.name} (${created.code}) successfully added to ${created.department}.`,
+    });
+
+    setIsAddWorkerOpen(false);
+    setNewName('');
+    setNewCode('');
+  };
 
   const handleSaveWage = (e) => {
     e.preventDefault();
@@ -65,10 +181,10 @@ export default function WorkersPage() {
 
   const filteredWorkers = workers.filter((w) => {
     const matchesSearch =
-      w.name.toLowerCase().includes(search.toLowerCase()) ||
-      w.code.toLowerCase().includes(search.toLowerCase()) ||
-      w.department.toLowerCase().includes(search.toLowerCase()) ||
-      w.role.toLowerCase().includes(search.toLowerCase());
+      (w.name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (w.code || '').toLowerCase().includes(search.toLowerCase()) ||
+      (w.department || '').toLowerCase().includes(search.toLowerCase()) ||
+      (w.role || '').toLowerCase().includes(search.toLowerCase());
 
     const matchesDept = departmentFilter === 'ALL' || w.department === departmentFilter;
     return matchesSearch && matchesDept;
@@ -89,9 +205,17 @@ export default function WorkersPage() {
             Worker & Shift Management
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-xl">
-            Shift attendance register, loom operator assignments, and automated wage calculation formula.
+            Shift attendance register, loom operator assignments, worker profiles, and automated wage calculation.
           </p>
         </div>
+
+        <button
+          onClick={() => setIsAddWorkerOpen(true)}
+          className="rounded-full bg-[#00bcd4] hover:bg-[#00acc1] px-5 py-2.5 text-xs font-black text-white shadow-md shadow-cyan-950/10 flex items-center gap-2 self-start md:self-auto transition-all"
+        >
+          <UserPlus className="h-4 w-4" />
+          <span>+ Add Employee / Operator</span>
+        </button>
       </div>
 
       {/* KPI Cards */}
@@ -99,11 +223,11 @@ export default function WorkersPage() {
         <div className="rounded-3xl bg-white p-5 shadow-sm border border-slate-100/80">
           <span className="text-[11px] font-black uppercase text-slate-400">Total Workforce</span>
           <p className="text-3xl font-black text-slate-800 mt-1">{workers.length} Operators</p>
-          <p className="text-xs text-slate-400 mt-0.5">Spinning, Weaving, QA</p>
+          <p className="text-xs text-slate-400 mt-0.5">Spinning, Weaving, QA, Dyeing</p>
         </div>
 
         <div className="rounded-3xl bg-white p-5 shadow-sm border border-slate-100/80">
-          <span className="text-[11px] font-black uppercase text-slate-400">Shift A Attendance</span>
+          <span className="text-[11px] font-black uppercase text-slate-400">Shift Attendance</span>
           <p className="text-3xl font-black text-emerald-600 mt-1">
             {presentCount} / {workers.length}
           </p>
@@ -151,7 +275,7 @@ export default function WorkersPage() {
             <Search className="pointer-events-none absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search operator (O-15), role, department..."
+              placeholder="Search operator, role, department..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-full border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2 text-xs focus:border-[#00bcd4] focus:outline-none"
@@ -181,7 +305,7 @@ export default function WorkersPage() {
               <tr>
                 <th className="px-5 py-3.5">Operator & ID</th>
                 <th className="px-5 py-3.5">Department & Machine</th>
-                <th className="px-5 py-3.5">Status</th>
+                <th className="px-5 py-3.5">Shift & Status</th>
                 <th className="px-5 py-3.5">Hours & OT</th>
                 <th className="px-5 py-3.5">Basic</th>
                 <th className="px-5 py-3.5">OT Pay</th>
@@ -216,6 +340,12 @@ export default function WorkersPage() {
                         )}
                       </div>
                       <div className="text-[11px] text-slate-400 mt-0.5">{w.role}</div>
+                      {w.phone && (
+                        <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                          <Phone className="h-2.5 w-2.5" />
+                          <span>{w.phone}</span>
+                        </div>
+                      )}
                     </td>
 
                     <td className="px-5 py-4">
@@ -224,15 +354,18 @@ export default function WorkersPage() {
                     </td>
 
                     <td className="px-5 py-4">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                          w.status === 'PRESENT'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-rose-100 text-rose-800'
-                        }`}
-                      >
-                        {w.status}
-                      </span>
+                      <div>
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                            w.status === 'PRESENT'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-rose-100 text-rose-800'
+                          }`}
+                        >
+                          {w.status}
+                        </span>
+                        <div className="text-[10px] text-slate-400 mt-1">{w.shift || 'Shift A'}</div>
+                      </div>
                     </td>
 
                     <td className="px-5 py-4 font-semibold text-slate-700">
@@ -248,6 +381,14 @@ export default function WorkersPage() {
 
                     <td className="px-5 py-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => handleOpenEditDetails(w)}
+                          title="Update Employee Details"
+                          className="rounded-full bg-cyan-50 px-3 py-1 text-[11px] font-bold text-[#00acc1] hover:bg-cyan-100 transition-colors flex items-center gap-1"
+                        >
+                          <Edit3 className="h-3 w-3" />
+                          <span>Edit Details</span>
+                        </button>
                         <button
                           onClick={() => {
                             setAttWorker(w);
@@ -266,9 +407,9 @@ export default function WorkersPage() {
                             setHourlyOtRate(w.hourlyOtRate);
                             setIncentives(w.incentives);
                           }}
-                          className="rounded-full bg-cyan-50 px-3 py-1 text-[11px] font-bold text-[#00acc1] hover:bg-cyan-100"
+                          className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-200"
                         >
-                          Wage Scale
+                          Scale
                         </button>
                       </div>
                     </td>
@@ -279,6 +420,294 @@ export default function WorkersPage() {
           </table>
         </div>
       </div>
+
+      {/* Edit Employee Details Modal */}
+      {editDetailsWorker && (
+        <Modal
+          isOpen={!!editDetailsWorker}
+          onClose={() => setEditDetailsWorker(null)}
+          title={`Update Employee Details: ${editDetailsWorker.name} (${editDetailsWorker.code})`}
+          maxWidth="max-w-xl"
+        >
+          <form onSubmit={handleSaveDetails} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={detailName}
+                  onChange={(e) => setDetailName(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Operator ID / Code *</label>
+                <input
+                  type="text"
+                  required
+                  value={detailCode}
+                  onChange={(e) => setDetailCode(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Designation / Role *</label>
+                <input
+                  type="text"
+                  required
+                  value={detailRole}
+                  onChange={(e) => setDetailRole(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Department</label>
+                <select
+                  value={detailDepartment}
+                  onChange={(e) => setDetailDepartment(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                >
+                  <option value="Weaving">Weaving</option>
+                  <option value="Spinning">Spinning</option>
+                  <option value="Dyeing">Dyeing</option>
+                  <option value="Quality Control">Quality Control</option>
+                  <option value="Maintenance">Maintenance</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Assigned Machine</label>
+                <input
+                  type="text"
+                  value={detailAssignedMachine}
+                  onChange={(e) => setDetailAssignedMachine(e.target.value)}
+                  placeholder="e.g. Picanol Airjet Loom W-07"
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Shift Schedule</label>
+                <select
+                  value={detailShift}
+                  onChange={(e) => setDetailShift(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                >
+                  <option value="Shift A (06:00 - 14:00)">Shift A (06:00 - 14:00)</option>
+                  <option value="Shift B (14:00 - 22:00)">Shift B (14:00 - 22:00)</option>
+                  <option value="Shift C (22:00 - 06:00)">Shift C (22:00 - 06:00)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Phone Number</label>
+                <input
+                  type="text"
+                  value={detailPhone}
+                  onChange={(e) => setDetailPhone(e.target.value)}
+                  placeholder="+91 98765 00000"
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-mono text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Floor Status</label>
+                <select
+                  value={detailStatus}
+                  onChange={(e) => setDetailStatus(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                >
+                  <option value="PRESENT">PRESENT</option>
+                  <option value="ABSENT">ABSENT</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Basic Daily Wage (₹)</label>
+                <input
+                  type="number"
+                  value={detailBasicWage}
+                  onChange={(e) => setDetailBasicWage(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Hourly OT Rate (₹/hr)</label>
+                <input
+                  type="number"
+                  value={detailHourlyOtRate}
+                  onChange={(e) => setDetailHourlyOtRate(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t pt-4">
+              <button
+                type="button"
+                onClick={() => setEditDetailsWorker(null)}
+                className="rounded-full border px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="rounded-full bg-[#00bcd4] hover:bg-[#00acc1] px-5 py-2 text-xs font-extrabold text-white shadow"
+              >
+                Save Details
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Add New Operator Modal */}
+      {isAddWorkerOpen && (
+        <Modal
+          isOpen={isAddWorkerOpen}
+          onClose={() => setIsAddWorkerOpen(false)}
+          title="Register New Employee / Operator"
+          maxWidth="max-w-xl"
+        >
+          <form onSubmit={handleCreateWorker} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Anand Mahindra"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Operator ID / Code</label>
+                <input
+                  type="text"
+                  placeholder="e.g. O-16 (auto if blank)"
+                  value={newCode}
+                  onChange={(e) => setNewCode(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Role / Designation *</label>
+                <input
+                  type="text"
+                  required
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Department</label>
+                <select
+                  value={newDepartment}
+                  onChange={(e) => setNewDepartment(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                >
+                  <option value="Weaving">Weaving</option>
+                  <option value="Spinning">Spinning</option>
+                  <option value="Dyeing">Dyeing</option>
+                  <option value="Quality Control">Quality Control</option>
+                  <option value="Maintenance">Maintenance</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Assigned Machine</label>
+                <input
+                  type="text"
+                  value={newAssignedMachine}
+                  onChange={(e) => setNewAssignedMachine(e.target.value)}
+                  placeholder="e.g. Picanol OmniPlus Loom W-01"
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Shift Schedule</label>
+                <select
+                  value={newShift}
+                  onChange={(e) => setNewShift(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                >
+                  <option value="Shift A (06:00 - 14:00)">Shift A (06:00 - 14:00)</option>
+                  <option value="Shift B (14:00 - 22:00)">Shift B (14:00 - 22:00)</option>
+                  <option value="Shift C (22:00 - 06:00)">Shift C (22:00 - 06:00)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Contact Phone</label>
+                <input
+                  type="text"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-mono text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Basic Daily Wage (₹)</label>
+                <input
+                  type="number"
+                  value={newBasicWage}
+                  onChange={(e) => setNewBasicWage(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Hourly OT Rate (₹/hr)</label>
+                <input
+                  type="number"
+                  value={newHourlyOtRate}
+                  onChange={(e) => setNewHourlyOtRate(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Initial Incentives (₹)</label>
+                <input
+                  type="number"
+                  value={newIncentives}
+                  onChange={(e) => setNewIncentives(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:border-[#00bcd4] focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t pt-4">
+              <button
+                type="button"
+                onClick={() => setIsAddWorkerOpen(false)}
+                className="rounded-full border px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="rounded-full bg-[#00bcd4] hover:bg-[#00acc1] px-5 py-2 text-xs font-extrabold text-white shadow"
+              >
+                Enroll Operator
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
       {/* Attendance Modal */}
       {attWorker && (
@@ -410,5 +839,3 @@ export default function WorkersPage() {
     </div>
   );
 }
-
-

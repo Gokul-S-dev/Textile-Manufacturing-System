@@ -57,10 +57,20 @@ function ProtectedRoute({ children }) {
 }
 
 function RoleRoute({ children, requiredPermissions = [] }) {
-  const { isAuthenticated, hasPermission } = useAuthStore();
+  const { isAuthenticated, hasPermission, user, activeRole } = useAuthStore();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  const isBuyer =
+    user?.roles?.some((r) => (typeof r === 'string' ? r : r?.name) === 'BUYER') ||
+    activeRole === 'BUYER' ||
+    user?.email === 'buyer@textile.local';
+
+  // Buyer should only ever access the Buyer Portal
+  if (isBuyer) {
+    return <Navigate to="/buyer-portal" replace />;
   }
 
   const hasRequiredPermission = requiredPermissions.every((permission) => hasPermission(permission));
@@ -70,6 +80,35 @@ function RoleRoute({ children, requiredPermissions = [] }) {
   }
 
   return children;
+}
+
+function BuyerOnlyRoute({ children }) {
+  const { isAuthenticated, user, activeRole } = useAuthStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const isBuyer =
+    user?.roles?.some((r) => (typeof r === 'string' ? r : r?.name) === 'BUYER') ||
+    activeRole === 'BUYER' ||
+    user?.email === 'buyer@textile.local';
+
+  // Buyer portal is exclusively for buyer logins
+  if (!isBuyer) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+}
+
+function HomeRedirect() {
+  const { user, activeRole } = useAuthStore();
+  const isBuyer =
+    user?.roles?.some((r) => (typeof r === 'string' ? r : r?.name) === 'BUYER') ||
+    activeRole === 'BUYER' ||
+    user?.email === 'buyer@textile.local';
+  return <Navigate to={isBuyer ? '/buyer-portal' : '/dashboard'} replace />;
 }
 
 export default function App() {
@@ -86,8 +125,8 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
+          <Route index element={<HomeRedirect />} />
+          <Route path="dashboard" element={<RoleRoute><DashboardPage /></RoleRoute>} />
           <Route path="orders" element={<RoleRoute requiredPermissions={['sales.read']}><OrdersPage /></RoleRoute>} />
           <Route path="sales" element={<RoleRoute requiredPermissions={['sales.read']}><SalesOrdersPage /></RoleRoute>} />
           <Route path="finance" element={<RoleRoute requiredPermissions={['finance.read']}><FinancePage /></RoleRoute>} />
@@ -99,7 +138,7 @@ export default function App() {
           <Route path="workers" element={<RoleRoute requiredPermissions={['workforce.read']}><WorkersPage /></RoleRoute>} />
           <Route path="quality" element={<RoleRoute requiredPermissions={['quality.read']}><QualityPage /></RoleRoute>} />
           <Route path="dispatch" element={<RoleRoute requiredPermissions={['sales.execute']}><DispatchPage /></RoleRoute>} />
-          <Route path="buyer-portal" element={<RoleRoute requiredPermissions={['sales.read']}><BuyerPortalPage /></RoleRoute>} />
+          <Route path="buyer-portal" element={<BuyerOnlyRoute><BuyerPortalPage /></BuyerOnlyRoute>} />
           <Route path="traceability" element={<RoleRoute requiredPermissions={['quality.read']}><TraceabilityPage /></RoleRoute>} />
           <Route path="audit-log" element={<RoleRoute requiredPermissions={['audit_logs.read']}><AuditLogPage /></RoleRoute>} />
           <Route path="notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />

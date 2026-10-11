@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore, USER_ROLES } from '../store/useAuthStore';
 import {
   Search,
@@ -44,6 +44,12 @@ export default function Navbar({ onToggleSidebar }) {
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [navSearch, setNavSearch] = useState('');
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const isBuyer =
+    user?.roles?.some((r) => (typeof r === 'string' ? r : r?.name) === 'BUYER') ||
+    activeRole === 'BUYER' ||
+    user?.email === 'buyer@textile.local';
 
   const currentRoleConfig = USER_ROLES[activeRole] || USER_ROLES.ADMIN;
   const currentModule = MODULE_TITLES[location.pathname] || null;
@@ -60,7 +66,7 @@ export default function Navbar({ onToggleSidebar }) {
         </button>
 
         <div className="flex items-center gap-2.5">
-          <Link to="/dashboard" className="flex items-center gap-2">
+          <Link to={isBuyer ? '/buyer-portal' : '/dashboard'} className="flex items-center gap-2">
             <span className="text-lg font-extrabold tracking-tight text-slate-800">
               Everest Textile Mills
             </span>
@@ -136,6 +142,11 @@ export default function Navbar({ onToggleSidebar }) {
                     onClick={() => {
                       switchRole(r.id);
                       setShowRoleMenu(false);
+                      if (r.id === 'BUYER') {
+                        navigate('/buyer-portal');
+                      } else {
+                        navigate('/dashboard');
+                      }
                     }}
                     className={`w-full flex items-center justify-between rounded-2xl px-3 py-2 text-left text-xs transition-colors ${
                       activeRole === r.id

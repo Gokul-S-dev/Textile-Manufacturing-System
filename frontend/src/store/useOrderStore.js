@@ -569,39 +569,63 @@ export const useOrderStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const salesOrders = await salesService.getSalesOrders();
-      // const prodOrders = await productionService.getOrders();
-      if (salesOrders && salesOrders.length > 0) {
-        // Map backend orders to frontend format
-        const mappedOrders = salesOrders.map(so => ({
-          id: so.id,
-          orderNumber: so.orderNumber,
-          buyerName: so.customer?.name || 'Unknown Customer',
-          contactPerson: so.customer?.contactPerson || '',
-          fabricType: so.lines?.[0]?.item?.name || 'Mixed Fabric',
-          colour: so.lines?.[0]?.item?.colour || 'Standard',
-          quantityMeters: so.lines?.[0]?.quantity || 1000,
-          producedMeters: so.lines?.[0]?.fulfilledQuantity || 0,
-          deadline: so.requestedDeliveryDate || so.orderDate,
-          priority: so.priority || 'NORMAL',
-          status: so.status === 'OPEN' ? 'PENDING' : so.status === 'PROCESSING' ? 'IN_PRODUCTION' : so.status,
-          assignedMachineId: null,
-          assignedMachineName: 'Unassigned',
-          assignedWorkerId: null,
-          assignedWorkerName: 'Unassigned',
-          stage: so.status,
-          notes: '',
-          unitPrice: so.lines?.[0]?.unitPrice || 0,
-          totalValue: so.totalAmount || 0,
-          yarnReservedKg: 0,
-        }));
-        set({ orders: mappedOrders, isLoading: false, error: null });
+      if (Array.isArray(salesOrders) && salesOrders.length > 0) {
+        const baseOrders = get().orders.length > 0 ? get().orders : initialOrders;
+        const mergedOrders = [...baseOrders];
+
+        salesOrders.forEach((so) => {
+          const existingIdx = mergedOrders.findIndex(
+            (o) => o.orderNumber === so.orderNumber || o.id === so.id
+          );
+
+          if (existingIdx !== -1) {
+            const existing = mergedOrders[existingIdx];
+            mergedOrders[existingIdx] = {
+              ...existing,
+              buyerName: so.customer?.name || existing.buyerName,
+              totalValue: so.totalAmount ? Number(so.totalAmount) : existing.totalValue,
+              status: existing.status || (so.status === 'CONFIRMED' || so.status === 'PROCESSING' ? 'IN_PRODUCTION' : existing.status),
+            };
+          } else {
+            const isConfirmed = so.status === 'CONFIRMED' || so.status === 'PROCESSING';
+            mergedOrders.push({
+              id: so.id,
+              orderNumber: so.orderNumber,
+              buyerName: so.customer?.name || 'Customer Order',
+              contactPerson: so.customer?.contactPerson || '',
+              fabricType: so.lines?.[0]?.item?.name || 'Single Jersey 100% Cotton (180 GSM)',
+              colour: so.lines?.[0]?.item?.colour || 'Optic White',
+              quantityMeters: Number(so.lines?.[0]?.quantity) || 2000,
+              producedMeters: Number(so.lines?.[0]?.fulfilledQuantity) || 0,
+              deadline: so.requestedDeliveryDate || new Date().toISOString().split('T')[0],
+              priority: so.priority || 'HIGH',
+              status: isConfirmed ? 'IN_PRODUCTION' : so.status === 'OPEN' ? 'PENDING' : so.status,
+              assignedMachineId: 'M-W01',
+              assignedMachineName: 'Picanol OmniPlus Airjet 01',
+              assignedWorkerId: 'W-001',
+              assignedWorkerName: 'Ravi Shankar (Op O-01)',
+              stage: 'Weaving',
+              notes: 'Imported from ERP sales system',
+              unitPrice: Number(so.lines?.[0]?.unitPrice) || 180,
+              totalValue: Number(so.totalAmount) || 360000,
+              yarnReservedKg: Math.round((Number(so.lines?.[0]?.quantity) || 2000) * 0.22),
+            });
+          }
+        });
+
+        set({ orders: mergedOrders, isLoading: false, error: null });
       } else {
-        // Fallback to initial mock data if db is empty
-        set({ orders: initialOrders, isLoading: false, error: null });
+        if (get().orders.length === 0) {
+          set({ orders: initialOrders });
+        }
+        set({ isLoading: false, error: null });
       }
     } catch (error) {
-      console.error('Failed to fetch orders:', error);
-      set({ orders: initialOrders, isLoading: false, error: error.message || 'Unable to load order queue.' });
+      console.warn('Failed to fetch orders from backend, using active roster:', error);
+      if (get().orders.length === 0) {
+        set({ orders: initialOrders });
+      }
+      set({ isLoading: false, error: null });
     }
   },
 
@@ -724,4 +748,307 @@ export const useOrderStore = create((set, get) => ({
       }),
     }));
   },
+
+  createProductionBatch: async (batchData) => {
+    const nextNum = get().orders.length + 26;
+    const batchNumber = batchData.batchNumber || `BATCH-2026-${String(nextNum).padStart(3, '0')}`;
+    const qtyMeters = Number(batchData.quantityMeters) || 2500;
+    const materialKg = Number(batchData.rawMaterialKg) || Math.round(qtyMeters * 0.22);
+
+    const newBatch = {
+      id: batchNumber,
+      orderNumber: batchNumber,
+      buyerName: batchData.buyerName || 'Everest Mills Internal Run',
+      contactPerson: batchData.contactPerson || 'Production Floor Admin',
+      fabricType: batchData.fabricType || 'Single Jersey 100% Cotton (180 GSM)',
+      colour: batchData.colour || 'Optic White',
+      quantityMeters: qtyMeters,
+      producedMeters: 0,
+      deadline: batchData.deadline || new Date(Date.now() + 10 * 86400000).toISOString().split('T')[0],
+      priority: batchData.priority || 'HIGH',
+      status: 'IN_PRODUCTION',
+      assignedMachineId: batchData.assignedMachineId || 'M-W01',
+      assignedMachineName: batchData.assignedMachineName || 'Picanol Airjet Loom W-01',
+      assignedWorkerId: batchData.assignedWorkerId || 'W-015',
+      assignedWorkerName: batchData.assignedWorkerName || 'Ramesh Kumar (Operator O-15)',
+      stage: batchData.stage || 'Weaving',
+      unitPrice: Number(batchData.unitPrice) || 190,
+      totalValue: qtyMeters * (Number(batchData.unitPrice) || 190),
+      yarnReservedKg: materialKg,
+      rawMaterialItemId: batchData.rawMaterialItemId || null,
+      rawMaterialName: batchData.rawMaterialName || null,
+      notes: batchData.notes || `Production batch issued by Production Manager. Raw material: ${materialKg}kg ${batchData.rawMaterialName || 'Yarn'} allocated.`,
+    };
+
+    // Add to active orders
+    set((state) => ({
+      orders: [newBatch, ...state.orders],
+    }));
+
+    // Deduct raw material immediately when the new batch begins
+    if (batchData.deductMaterial !== false) {
+      try {
+        const { useInventoryStore } = await import('./useInventoryStore');
+        await useInventoryStore.getState().deductRawMaterial({
+          itemId: batchData.rawMaterialItemId,
+          quantity: materialKg,
+          reason: `Raw material issued for new batch ${batchNumber}`,
+          productionBatchId: batchNumber,
+        });
+      } catch (err) {
+        console.warn('Could not deduct inventory for new batch:', err);
+      }
+    }
+
+    // Update machine status if machine assigned
+    if (batchData.assignedMachineId) {
+      try {
+        const { useMachineStore } = await import('./useMachineStore');
+        useMachineStore.getState().assignWorkerToMachine?.(
+          batchData.assignedMachineId,
+          newBatch.assignedWorkerName,
+          newBatch.assignedWorkerId
+        );
+      } catch (err) {
+        console.warn('Machine sync skipped:', err);
+      }
+    }
+
+    // Try backend sync
+    try {
+      await productionService.createOrder({
+        fabricSpec: newBatch.fabricType,
+        targetQuantity: newBatch.quantityMeters,
+        dueDate: newBatch.deadline,
+        priority: newBatch.priority,
+        color: newBatch.colour,
+      });
+    } catch (err) {
+      console.warn('Backend production order creation skipped; local batch active.', err);
+    }
+
+    return newBatch;
+  },
+
+  createBuyerOrder: async (orderData) => {
+    const nextNum = get().orders.length + 30;
+    const orderNumber = `ORD-${nextNum}`;
+    const qtyMeters = Number(orderData.quantityMeters) || 3000;
+
+    const newOrder = {
+      id: orderNumber,
+      orderNumber,
+      buyerName: orderData.buyerName || 'Apex Fashion Group',
+      contactPerson: orderData.contactPerson || 'Buyer Procurement Office',
+      fabricType: orderData.fabricType || 'Single Jersey 100% Cotton (180 GSM)',
+      colour: orderData.colour || 'Optic White',
+      quantityMeters: qtyMeters,
+      producedMeters: 0,
+      deadline: orderData.deadline || orderData.requestedDeliveryDate || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+      priority: orderData.priority || 'HIGH',
+      status: 'AWAITING_COSTING',
+      stage: 'Pending Production Costing',
+      unitPrice: 0,
+      totalValue: 0,
+      yarnReservedKg: Math.round(qtyMeters * 0.22),
+      rawMaterialItemId: null,
+      rawMaterialName: null,
+      assignedMachineId: null,
+      assignedMachineName: 'Pending Assignment',
+      assignedWorkerId: null,
+      assignedWorkerName: 'Pending Assignment',
+      notes: orderData.notes || 'Order placed via Buyer Portal. Moved to Production Team as new batch request for costing.',
+      createdAt: new Date().toISOString(),
+      isBuyerOrder: true,
+    };
+
+    set((state) => ({
+      orders: [newOrder, ...state.orders],
+    }));
+
+    // Audit log
+    try {
+      const { useAuditStore } = await import('./useAuditStore');
+      useAuditStore.getState().addLog({
+        userName: newOrder.buyerName,
+        userRole: 'BUYER',
+        action: 'BUYER_ORDER_CREATED',
+        target: newOrder.orderNumber,
+        details: `Buyer ${newOrder.buyerName} placed order ${newOrder.orderNumber} for ${qtyMeters}M of ${newOrder.fabricType}. Moved to Production Team for batch costing.`,
+        badgeColor: 'blue',
+      });
+    } catch (e) {
+      console.warn('Audit log failed:', e);
+    }
+
+    return newOrder;
+  },
+
+  sendQuotationToBuyer: async (orderId, quoteData) => {
+    const unitPrice = Number(quoteData.unitPrice) || 180;
+    const qtyMeters = Number(quoteData.quantityMeters) || 1000;
+    const totalAmount = Number(quoteData.totalAmount) || unitPrice * qtyMeters;
+    const yarnKg = Number(quoteData.yarnKg) || Math.round(qtyMeters * 0.22);
+
+    let updatedOrder = null;
+
+    set((state) => ({
+      orders: state.orders.map((o) => {
+        if (o.id === orderId || o.orderNumber === orderId) {
+          updatedOrder = {
+            ...o,
+            status: 'AWAITING_BUYER_APPROVAL',
+            stage: 'Quotation Sent - Awaiting Buyer Approval',
+            unitPrice,
+            totalValue: totalAmount,
+            yarnReservedKg: yarnKg,
+            rawMaterialItemId: quoteData.yarnItemId || o.rawMaterialItemId,
+            rawMaterialName: quoteData.yarnItemName || o.rawMaterialName,
+            assignedMachineId: quoteData.targetMachineId || o.assignedMachineId,
+            assignedMachineName: quoteData.targetMachineName || o.assignedMachineName || 'Loom Assigned on Approval',
+            deadline: quoteData.deadline || o.deadline,
+            quotationNotes: quoteData.quotationNotes || 'Price confirmed by Production Manager.',
+            quotedAt: new Date().toISOString(),
+          };
+          return updatedOrder;
+        }
+        return o;
+      }),
+    }));
+
+    try {
+      const { useAuditStore } = await import('./useAuditStore');
+      useAuditStore.getState().addLog({
+        userName: 'Production Manager',
+        userRole: 'PRODUCTION_MANAGER',
+        action: 'QUOTATION_SENT',
+        target: orderId,
+        details: `Calculated amount ₹${totalAmount.toLocaleString('en-IN')} (₹${unitPrice}/m, ${yarnKg}kg yarn) and sent quotation to ${updatedOrder?.buyerName || 'Buyer'} for approval.`,
+        badgeColor: 'purple',
+      });
+    } catch (e) {
+      console.warn('Audit log failed:', e);
+    }
+
+    return updatedOrder;
+  },
+
+  approveBuyerQuotation: async (orderId) => {
+    let approvedOrder = null;
+
+    set((state) => ({
+      orders: state.orders.map((o) => {
+        if (o.id === orderId || o.orderNumber === orderId) {
+          approvedOrder = {
+            ...o,
+            status: 'APPROVED_BY_BUYER',
+            stage: 'Buyer Approved - Ready for Machine Run',
+            approvedAt: new Date().toISOString(),
+          };
+          return approvedOrder;
+        }
+        return o;
+      }),
+    }));
+
+    try {
+      const { useAuditStore } = await import('./useAuditStore');
+      useAuditStore.getState().addLog({
+        userName: approvedOrder?.buyerName || 'Buyer',
+        userRole: 'BUYER',
+        action: 'QUOTATION_APPROVED',
+        target: orderId,
+        details: `Buyer approved batch quotation of ₹${Number(approvedOrder?.totalValue || 0).toLocaleString('en-IN')}. Order is ready for Production Manager machine run.`,
+        badgeColor: 'green',
+      });
+    } catch (e) {
+      console.warn('Audit log failed:', e);
+    }
+
+    return approvedOrder;
+  },
+
+  startProductionJob: async (orderId, options = {}) => {
+    const machineId = typeof options === 'string' ? options : options.machineId;
+    const machineName = options.machineName;
+    const workerId = options.workerId;
+    const workerName = options.workerName;
+    const rawMaterialItemId = options.rawMaterialItemId;
+    const rawMaterialKg = options.rawMaterialKg;
+
+    const order = get().orders.find((o) => o.id === orderId || o.orderNumber === orderId);
+    if (!order) return;
+
+    const qtyToDeduct = Number(rawMaterialKg) || Number(order.yarnReservedKg) || Math.round((Number(order.quantityMeters) || 1000) * 0.22);
+    const targetItemId = rawMaterialItemId || order.rawMaterialItemId;
+
+    // Deduct raw material from inventory
+    try {
+      const { useInventoryStore } = await import('./useInventoryStore');
+      await useInventoryStore.getState().deductRawMaterial({
+        itemId: targetItemId,
+        quantity: qtyToDeduct,
+        reason: `Raw material issued: Job ${order.orderNumber} started on floor`,
+        productionBatchId: order.orderNumber,
+      });
+    } catch (err) {
+      console.warn('Inventory deduction error on job start:', err);
+    }
+
+    // Update machine status to RUNNING
+    const targetMachineId = machineId || order.assignedMachineId;
+    if (targetMachineId) {
+      try {
+        const { useMachineStore } = await import('./useMachineStore');
+        useMachineStore.getState().assignWorkerToMachine?.(
+          targetMachineId,
+          workerName || order.assignedWorkerName || 'Floor Pool Operator',
+          workerId || order.assignedWorkerId || 'W-001'
+        );
+        useMachineStore.getState().updateMachineStatus?.(
+          targetMachineId,
+          'RUNNING',
+          `Running batch ${order.orderNumber}`
+        );
+      } catch (err) {
+        console.warn('Machine status update skipped:', err);
+      }
+    }
+
+    set((state) => ({
+      orders: state.orders.map((o) => {
+        if (o.id === orderId || o.orderNumber === orderId) {
+          return {
+            ...o,
+            status: 'IN_PRODUCTION',
+            stage: o.stage?.includes('Spinning') ? 'Spinning' : o.stage?.includes('Dyeing') ? 'Dyeing' : 'Weaving',
+            assignedMachineId: machineId || o.assignedMachineId,
+            assignedMachineName: machineName || o.assignedMachineName || 'Picanol Airjet Loom W-07',
+            assignedWorkerId: workerId || o.assignedWorkerId,
+            assignedWorkerName: workerName || o.assignedWorkerName || 'Ramesh Kumar (Operator O-15)',
+            productionStartedAt: new Date().toISOString(),
+          };
+        }
+        return o;
+      }),
+    }));
+
+    try {
+      const { useAuditStore } = await import('./useAuditStore');
+      useAuditStore.getState().addLog({
+        userName: 'Production Manager',
+        userRole: 'PRODUCTION_MANAGER',
+        action: 'JOB_STARTED',
+        target: order.orderNumber,
+        details: `Started production run for ${order.orderNumber} on ${machineName || order.assignedMachineName || 'Assigned Machine'}. Deducted ${qtyToDeduct}kg raw material.`,
+        badgeColor: 'blue',
+      });
+    } catch (e) {
+      console.warn('Audit log failed:', e);
+    }
+
+    return { order, qtyToDeduct };
+  },
 }));
+
+

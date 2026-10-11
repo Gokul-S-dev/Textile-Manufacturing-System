@@ -7,17 +7,10 @@ import rateLimit from 'express-rate-limit';
 
 const router = Router();
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { message: 'Too many authentication attempts, please try again later' },
-  standardHeaders: true, 
-  legacyHeaders: false, 
-});
-
-router.post('/login', authLimiter, validate(loginSchema), login);
-router.post('/refresh', authLimiter, validate(refreshSchema), refresh);
-router.post('/logout', logout); // Optional: add authenticate if needed
+// Rate limiting disabled as requested
+router.post('/login', validate(loginSchema), login);
+router.post('/refresh', validate(refreshSchema), refresh);
+router.post('/logout', logout);
 
 // Protected routes
 router.post('/logout-all', authenticate, logoutAll);

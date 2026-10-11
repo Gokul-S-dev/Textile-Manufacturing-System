@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
-  const { user, hasPermission, logout, isSidebarExpanded, toggleSidebarExpanded } = useAuthStore();
+  const { user, hasPermission, logout, isSidebarExpanded, toggleSidebarExpanded, activeRole } = useAuthStore();
   const [tooltip, setTooltip] = useState({ visible: false, name: '', top: 0 });
 
   const navItems = [
@@ -34,14 +34,20 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: 'Workers & Wages', to: '/workers', icon: Users, permission: 'workforce.read' },
     { name: 'Quality & Defects', to: '/quality', icon: CheckCircle2, permission: 'quality.read' },
     { name: 'Dispatch & Invoices', to: '/dispatch', icon: Truck, permission: 'sales.execute' },
-    { name: 'Buyer Portal', to: '/buyer-portal', icon: Globe, permission: 'sales.read' },
     { name: 'Cost & Profit', to: '/finance', icon: Coins, permission: 'finance.read' },
     { name: 'Traceability Matrix', to: '/traceability', icon: GitBranch, permission: 'quality.read' },
     { name: 'Audit Trail', to: '/audit-log', icon: History, permission: 'audit_logs.read' },
     { name: 'System Settings', to: '/settings', icon: Settings, permission: 'users.manage' },
   ];
 
-  const visibleNav = navItems.filter((item) => !item.permission || hasPermission(item.permission));
+  const isBuyer =
+    user?.roles?.some((r) => (typeof r === 'string' ? r : r?.name) === 'BUYER') ||
+    activeRole === 'BUYER' ||
+    user?.email === 'buyer@textile.local';
+
+  const visibleNav = isBuyer
+    ? [{ name: 'My Orders & Portal', to: '/buyer-portal', icon: Globe }]
+    : navItems.filter((item) => !item.permission || hasPermission(item.permission));
 
   const handleMouseEnter = (name, e) => {
     if (isSidebarExpanded) return;
@@ -153,14 +159,7 @@ export default function Sidebar({ isOpen, onClose }) {
               >
                 <item.icon className="h-5 w-5 shrink-0" />
                 {isSidebarExpanded && (
-                  <div className="flex flex-1 items-center justify-between min-w-0">
-                    <span className="text-xs font-semibold truncate tracking-tight">{item.name}</span>
-                    {item.permission && (
-                      <span className="shrink-0 text-[8px] font-black uppercase tracking-wider bg-white/25 text-white px-1.5 py-0.5 rounded-full ml-1">
-                        Role
-                      </span>
-                    )}
-                  </div>
+                  <span className="text-xs font-semibold truncate tracking-tight">{item.name}</span>
                 )}
               </NavLink>
             </div>

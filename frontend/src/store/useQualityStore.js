@@ -1,35 +1,14 @@
 import { create } from 'zustand';
 import { useAuditStore } from './useAuditStore';
 
-// Initial fabric roll inspection records
+// Initial fabric roll inspection records covering finished and active production batches
 const initialInspections = [
-  {
-    rollId: 'R-102',
-    orderId: 'ORD-25',
-    buyerName: 'Zara International',
-    fabricType: 'Single Jersey 100% Cotton (180 GSM)',
-    machineId: 'M-W07',
-    machineCode: 'W-07',
-    machineName: 'Picanol Airjet Loom W-07',
-    operatorId: 'W-015',
-    operatorCode: 'O-15',
-    operatorName: 'Ramesh Kumar',
-    inspectorName: 'Sunil Verma (QA Lead)',
-    inspectionDate: '2026-10-10 14:15',
-    rollLengthMeters: 120,
-    defectType: 'Uneven weaving',
-    defectSeverity: 'CRITICAL',
-    defectLocation: 'Meters 45 to 63',
-    defectDescription: 'Weft insertion sensor malfunction caused irregular pick density and visible banding.',
-    result: 'REJECT', // FAILED
-    warehouseLocation: 'Quarantine Section Q-2',
-    traceabilityNotes: 'Root cause traced to sensor failure on loom W-07 during Operator O-15 shift.',
-  },
   {
     rollId: 'R-101',
     orderId: 'ORD-25',
     buyerName: 'Zara International',
     fabricType: 'Single Jersey 100% Cotton (180 GSM)',
+    colour: 'Optic White',
     machineId: 'M-W07',
     machineCode: 'W-07',
     machineName: 'Picanol Airjet Loom W-07',
@@ -39,19 +18,55 @@ const initialInspections = [
     inspectorName: 'Sunil Verma (QA Lead)',
     inspectionDate: '2026-10-10 11:30',
     rollLengthMeters: 140,
+    measuredGsm: 182,
+    shrinkagePercent: 1.5,
+    tensileStrength: '340 N',
+    colorFastness: 'Grade 4.5',
+    grade: 'Grade A (Export)',
+    fourPointScore: 8,
     defectType: 'Minor Selvedge Snag',
     defectSeverity: 'LOW',
     defectLocation: 'Selvedge edge meter 10',
     defectDescription: 'Light loop formation on outer 2cm edge, easily trimmable.',
     result: 'PASS',
     warehouseLocation: 'Finished Warehouse Rack A-12',
-    traceabilityNotes: 'Within 4-point ASTM D5430 QA standard.',
+    traceabilityNotes: 'Within 4-point ASTM D5430 QA standard. Certified for shipment.',
+  },
+  {
+    rollId: 'R-102',
+    orderId: 'ORD-25',
+    buyerName: 'Zara International',
+    fabricType: 'Single Jersey 100% Cotton (180 GSM)',
+    colour: 'Optic White',
+    machineId: 'M-W07',
+    machineCode: 'W-07',
+    machineName: 'Picanol Airjet Loom W-07',
+    operatorId: 'W-015',
+    operatorCode: 'O-15',
+    operatorName: 'Ramesh Kumar',
+    inspectorName: 'Sunil Verma (QA Lead)',
+    inspectionDate: '2026-10-10 14:15',
+    rollLengthMeters: 120,
+    measuredGsm: 174,
+    shrinkagePercent: 3.8,
+    tensileStrength: '290 N',
+    colorFastness: 'Grade 3.5',
+    grade: 'Substandard / Rejected',
+    fourPointScore: 32,
+    defectType: 'Uneven weaving',
+    defectSeverity: 'CRITICAL',
+    defectLocation: 'Meters 45 to 63',
+    defectDescription: 'Weft insertion sensor malfunction caused irregular pick density and visible banding.',
+    result: 'REJECT',
+    warehouseLocation: 'Quarantine Section Q-2',
+    traceabilityNotes: 'Root cause traced to sensor failure on loom W-07 during Operator O-15 shift.',
   },
   {
     rollId: 'R-103',
     orderId: 'ORD-1024',
     buyerName: 'Apex Fashion Group',
     fabricType: 'Twill Weave Poly-Viscose Shirting (220 GSM)',
+    colour: 'Royal Navy Blue',
     machineId: 'M-W03',
     machineCode: 'W-03',
     machineName: 'Sulzer Rapier Loom W-03',
@@ -61,10 +76,16 @@ const initialInspections = [
     inspectorName: 'Sunil Verma (QA Lead)',
     inspectionDate: '2026-10-10 13:00',
     rollLengthMeters: 150,
+    measuredGsm: 221,
+    shrinkagePercent: 1.2,
+    tensileStrength: '420 N',
+    colorFastness: 'Grade 5.0',
+    grade: 'Grade A (Export)',
+    fourPointScore: 4,
     defectType: 'None',
     defectSeverity: 'NONE',
     defectLocation: 'None',
-    defectDescription: 'Flawless weave, uniform GSM and color fastness grade 4.5.',
+    defectDescription: 'Flawless weave, uniform GSM and color fastness grade 5.0.',
     result: 'PASS',
     warehouseLocation: 'Finished Warehouse Rack B-04',
     traceabilityNotes: 'Certified for dispatch to Apex Fashion Group.',
@@ -74,6 +95,7 @@ const initialInspections = [
     orderId: 'ORD-28',
     buyerName: 'H&M Global Sourcing',
     fabricType: 'Pique Knit Poly-Cotton (240 GSM)',
+    colour: 'Deep Navy',
     machineId: 'M-W02',
     machineCode: 'W-02',
     machineName: 'Picanol Airjet Loom W-02',
@@ -83,6 +105,12 @@ const initialInspections = [
     inspectorName: 'Sunil Verma (QA Lead)',
     inspectionDate: '2026-10-10 09:45',
     rollLengthMeters: 130,
+    measuredGsm: 238,
+    shrinkagePercent: 2.1,
+    tensileStrength: '380 N',
+    colorFastness: 'Grade 4.0',
+    grade: 'Grade B (Commercial)',
+    fourPointScore: 18,
     defectType: 'Oil Drop Stain',
     defectSeverity: 'MODERATE',
     defectLocation: 'Meters 80 to 82',
@@ -96,6 +124,7 @@ const initialInspections = [
     orderId: 'ORD-30',
     buyerName: 'Raymond Luxury Apparel',
     fabricType: 'Mercerized Cotton Poplin (120 GSM)',
+    colour: 'Charcoal Grey',
     machineId: 'M-W05',
     machineCode: 'W-05',
     machineName: 'Tsudakoma Loom W-05',
@@ -105,19 +134,26 @@ const initialInspections = [
     inspectorName: 'Sunil Verma (QA Lead)',
     inspectionDate: '2026-10-09 16:20',
     rollLengthMeters: 160,
+    measuredGsm: 121,
+    shrinkagePercent: 1.0,
+    tensileStrength: '310 N',
+    colorFastness: 'Grade 5.0',
+    grade: 'Grade A (Export)',
+    fourPointScore: 2,
     defectType: 'None',
     defectSeverity: 'NONE',
     defectLocation: 'None',
-    defectDescription: 'Zero defects. Export standard sheen.',
+    defectDescription: 'Zero defects. Export standard high-twist mercerized finish.',
     result: 'PASS',
     warehouseLocation: 'Finished Warehouse Rack A-08',
-    traceabilityNotes: 'Approved for shipment.',
+    traceabilityNotes: 'Approved for shipment to Raymond.',
   },
   {
     rollId: 'R-106',
     orderId: 'ORD-33',
     buyerName: 'Levi Strauss India',
     fabricType: 'Stretch Indigo Denim Twill (380 GSM)',
+    colour: 'Dark Indigo Raw',
     machineId: 'M-W04',
     machineCode: 'W-04',
     machineName: 'Sulzer Rapier Loom W-04',
@@ -127,10 +163,16 @@ const initialInspections = [
     inspectorName: 'Sunil Verma (QA Lead)',
     inspectionDate: '2026-10-09 14:00',
     rollLengthMeters: 110,
+    measuredGsm: 365,
+    shrinkagePercent: 4.5,
+    tensileStrength: '520 N',
+    colorFastness: 'Grade 3.0',
+    grade: 'Substandard / Rejected',
+    fourPointScore: 36,
     defectType: 'Broken Warp End',
     defectSeverity: 'HIGH',
     defectLocation: 'Meters 22 to 28',
-    defectDescription: 'Missing end creating horizontal channel. Non-repairable.',
+    defectDescription: 'Missing end creating horizontal channel. Non-repairable structural fault.',
     result: 'REJECT',
     warehouseLocation: 'Quarantine Section Q-1',
     traceabilityNotes: 'Scrap lot. Diverted to secondary recycling.',
@@ -140,6 +182,7 @@ const initialInspections = [
     orderId: 'ORD-29',
     buyerName: 'FabIndia Overseas',
     fabricType: 'Rayon Challis Soft Finish (140 GSM)',
+    colour: 'Crimson Red',
     machineId: 'M-D01',
     machineCode: 'D-01',
     machineName: 'Fong Dyeing Machine D-01',
@@ -149,47 +192,344 @@ const initialInspections = [
     inspectorName: 'Sunil Verma (QA Lead)',
     inspectionDate: '2026-10-10 15:00',
     rollLengthMeters: 125,
+    measuredGsm: 140,
+    shrinkagePercent: 2.0,
+    tensileStrength: '280 N',
+    colorFastness: 'Grade 4.0',
+    grade: 'Grade B (Commercial)',
+    fourPointScore: 12,
     defectType: 'Pending Verification',
     defectSeverity: 'PENDING',
     defectLocation: 'Full roll',
-    defectDescription: 'Fresh batch dyed off the stenter frame; awaiting shade grading.',
+    defectDescription: 'Fresh batch dyed off stenter frame; undergoing spectrophotometer shade check.',
     result: 'PENDING INSPECTION',
     warehouseLocation: 'Inspection Holding Bay 3',
-    traceabilityNotes: 'Scheduled for Spectrophotometer test.',
+    traceabilityNotes: 'Scheduled for Spectrophotometer Delta-E test.',
+  },
+  {
+    rollId: 'R-108',
+    orderId: 'ORD-19',
+    buyerName: 'Allen Solly Casuals',
+    fabricType: 'Cotton Lycra Pique (210 GSM)',
+    colour: 'Forest Green',
+    machineId: 'M-W02',
+    machineCode: 'W-02',
+    machineName: 'Picanol Airjet Loom W-02',
+    operatorId: 'W-003',
+    operatorCode: 'O-02',
+    operatorName: 'Manoj Tiwari',
+    inspectorName: 'Sunil Verma (QA Lead)',
+    inspectionDate: '2026-10-02 10:15',
+    rollLengthMeters: 180,
+    measuredGsm: 212,
+    shrinkagePercent: 1.6,
+    tensileStrength: '390 N',
+    colorFastness: 'Grade 4.5',
+    grade: 'Grade A (Export)',
+    fourPointScore: 6,
+    defectType: 'None',
+    defectSeverity: 'NONE',
+    defectLocation: 'None',
+    defectDescription: 'Production complete. Dimensional stability and Lycra recovery tested at 98%.',
+    result: 'PASS',
+    warehouseLocation: 'Dispatched Goods Staging',
+    traceabilityNotes: 'Order ORD-19 completed and delivered.',
+  },
+  {
+    rollId: 'R-109',
+    orderId: 'ORD-20',
+    buyerName: 'Raymond Luxury Apparel',
+    fabricType: 'Super 120s Wool Poly Suiting',
+    colour: 'Midnight Navy',
+    machineId: 'M-W06',
+    machineCode: 'W-06',
+    machineName: 'Jacquard Silk Loom W-06',
+    operatorId: 'W-012',
+    operatorCode: 'O-09',
+    operatorName: 'Subhash Sen',
+    inspectorName: 'Sunil Verma (QA Lead)',
+    inspectionDate: '2026-10-04 11:45',
+    rollLengthMeters: 100,
+    measuredGsm: 260,
+    shrinkagePercent: 0.8,
+    tensileStrength: '450 N',
+    colorFastness: 'Grade 5.0',
+    grade: 'Grade A (Export)',
+    fourPointScore: 3,
+    defectType: 'None',
+    defectSeverity: 'NONE',
+    defectLocation: 'None',
+    defectDescription: 'Premium wool worsted quality approved.',
+    result: 'PASS',
+    warehouseLocation: 'Dispatched Goods Staging',
+    traceabilityNotes: 'Invoice INV-2026-089 settled.',
+  },
+  {
+    rollId: 'R-110',
+    orderId: 'ORD-21',
+    buyerName: 'Zara International',
+    fabricType: 'Viscose Crepe Printed Ground (130 GSM)',
+    colour: 'Natural Ecru',
+    machineId: 'M-D01',
+    machineCode: 'D-01',
+    machineName: 'Fong Dyeing Machine D-01',
+    operatorId: 'W-009',
+    operatorCode: 'O-12',
+    operatorName: 'Kishore Lal',
+    inspectorName: 'Sunil Verma (QA Lead)',
+    inspectionDate: '2026-10-05 16:30',
+    rollLengthMeters: 140,
+    measuredGsm: 131,
+    shrinkagePercent: 2.2,
+    tensileStrength: '270 N',
+    colorFastness: 'Grade 4.5',
+    grade: 'Grade A (Export)',
+    fourPointScore: 7,
+    defectType: 'Minor Crease Mark',
+    defectSeverity: 'LOW',
+    defectLocation: 'Meter 110',
+    defectDescription: 'Superficial calender crease, relaxed upon steam ironing.',
+    result: 'PASS',
+    warehouseLocation: 'Dispatched Goods Staging',
+    traceabilityNotes: 'Air freight cleared.',
+  },
+  {
+    rollId: 'R-111',
+    orderId: 'ORD-22',
+    buyerName: 'Gap Kids Global',
+    fabricType: 'Baby French Terry Heather (260 GSM)',
+    colour: 'Pastel Mint',
+    machineId: 'M-W03',
+    machineCode: 'W-03',
+    machineName: 'Sulzer Rapier Loom W-03',
+    operatorId: 'W-008',
+    operatorCode: 'O-03',
+    operatorName: 'Amit Sharma',
+    inspectorName: 'Sunil Verma (QA Lead)',
+    inspectionDate: '2026-10-06 14:20',
+    rollLengthMeters: 135,
+    measuredGsm: 262,
+    shrinkagePercent: 1.4,
+    tensileStrength: '330 N',
+    colorFastness: 'Grade 5.0',
+    grade: 'Grade A (Export)',
+    fourPointScore: 4,
+    defectType: 'None',
+    defectSeverity: 'NONE',
+    defectLocation: 'None',
+    defectDescription: 'OEKO-TEX Class 1 certification passed. Zero heavy metal residues.',
+    result: 'PASS',
+    warehouseLocation: 'Dispatched Goods Staging',
+    traceabilityNotes: 'Baby garment standard verified.',
+  },
+  {
+    rollId: 'R-112',
+    orderId: 'ORD-23',
+    buyerName: 'Max Fashion Landmark',
+    fabricType: 'Poly Cotton Single Jersey (160 GSM)',
+    colour: 'Jet Black',
+    machineId: 'M-S03',
+    machineCode: 'S-03',
+    machineName: 'Rieter Ring Frame S-03',
+    operatorId: 'W-004',
+    operatorCode: 'O-04',
+    operatorName: 'Deepak Patel',
+    inspectorName: 'Sunil Verma (QA Lead)',
+    inspectionDate: '2026-10-07 09:30',
+    rollLengthMeters: 175,
+    measuredGsm: 161,
+    shrinkagePercent: 1.9,
+    tensileStrength: '360 N',
+    colorFastness: 'Grade 4.5',
+    grade: 'Grade A (Export)',
+    fourPointScore: 5,
+    defectType: 'None',
+    defectSeverity: 'NONE',
+    defectLocation: 'None',
+    defectDescription: 'Jet black shade consistency Delta-E < 0.4.',
+    result: 'PASS',
+    warehouseLocation: 'Dispatched Goods Staging',
+    traceabilityNotes: 'Passed bulk order specifications.',
+  },
+  {
+    rollId: 'R-113',
+    orderId: 'ORD-32',
+    buyerName: 'Decathlon Sportswear',
+    fabricType: 'Micro-Interlock Polyester Dry-Fit',
+    colour: 'Lime Neon',
+    machineId: 'M-S04',
+    machineCode: 'S-04',
+    machineName: 'Rieter Ring Frame S-04',
+    operatorId: 'W-004',
+    operatorCode: 'O-04',
+    operatorName: 'Deepak Patel',
+    inspectorName: 'Sunil Verma (QA Lead)',
+    inspectionDate: '2026-10-10 16:45',
+    rollLengthMeters: 155,
+    measuredGsm: 147,
+    shrinkagePercent: 1.1,
+    tensileStrength: '480 N',
+    colorFastness: 'Grade 4.5',
+    grade: 'Grade B (Commercial)',
+    fourPointScore: 19,
+    defectType: 'Yarn Snag Loop',
+    defectSeverity: 'MODERATE',
+    defectLocation: 'Meters 30 to 32',
+    defectDescription: 'Minor guide hook burr pull. Suitable for rework through trimming blade.',
+    result: 'REWORK',
+    warehouseLocation: 'Rewinding & Trimming Bay 2',
+    traceabilityNotes: 'Rework batch authorized by Quality Manager.',
+  },
+  {
+    rollId: 'R-114',
+    orderId: 'ORD-31',
+    buyerName: 'Sabyasachi Heritage Couturiers',
+    fabricType: 'Pure Mulberry Silk Brocade (90 GSM)',
+    colour: 'Ivory Gold',
+    machineId: 'M-W06',
+    machineCode: 'W-06',
+    machineName: 'Jacquard Silk Loom W-06',
+    operatorId: 'W-012',
+    operatorCode: 'O-09',
+    operatorName: 'Subhash Sen',
+    inspectorName: 'Sunil Verma (QA Lead)',
+    inspectionDate: '2026-10-10 17:15',
+    rollLengthMeters: 80,
+    measuredGsm: 92,
+    shrinkagePercent: 0.5,
+    tensileStrength: '290 N',
+    colorFastness: 'Grade 5.0',
+    grade: 'Grade A (Export)',
+    fourPointScore: 3,
+    defectType: 'None',
+    defectSeverity: 'NONE',
+    defectLocation: 'None',
+    defectDescription: 'High precision metallic Zari thread alignment. Exceptional hand-loom grade quality.',
+    result: 'PASS',
+    warehouseLocation: 'Finished Warehouse Rack Vault-1',
+    traceabilityNotes: 'Passed artisan grading.',
   },
 ];
 
+const calculateRates = (items) => {
+  const total = items.length;
+  if (!total) return { passRate: 92, reworkRate: 5, rejectRate: 3 };
+  const passed = items.filter((i) => i.result === 'PASS').length;
+  const rework = items.filter((i) => i.result === 'REWORK').length;
+  const reject = items.filter((i) => i.result === 'REJECT').length;
+  return {
+    passRate: Math.round((passed / total) * 100),
+    reworkRate: Math.round((rework / total) * 100),
+    rejectRate: Math.round((reject / total) * 100),
+  };
+};
+
+const initialRates = calculateRates(initialInspections);
+
 export const useQualityStore = create((set, get) => ({
   inspections: initialInspections,
-
-  // Dashboard metrics (Pass: 92%, Rework: 5%, Rejected: 3%)
-  passRate: 92,
-  reworkRate: 5,
-  rejectRate: 3,
+  passRate: initialRates.passRate,
+  reworkRate: initialRates.reworkRate,
+  rejectRate: initialRates.rejectRate,
+  isLoading: false,
 
   getRollById: (rollId) => {
-    return get().inspections.find((i) => i.rollId.toUpperCase() === rollId.toUpperCase());
+    return get().inspections.find((i) => (i.rollId || '').toUpperCase() === rollId.toUpperCase());
   },
 
+  // Update quality inspection for an existing roll or product
+  updateQuality: (rollId, updateData) => {
+    let updatedRoll = null;
+
+    set((state) => {
+      const nextInspections = state.inspections.map((item) => {
+        if ((item.rollId || '').toUpperCase() === rollId.toUpperCase()) {
+          updatedRoll = {
+            ...item,
+            ...updateData,
+            inspectionDate: new Date().toISOString().replace('T', ' ').substring(0, 16),
+            inspectorName: updateData.inspectorName || 'Quality Manager (Sunil Verma)',
+          };
+          return updatedRoll;
+        }
+        return item;
+      });
+
+      const rates = calculateRates(nextInspections);
+
+      return {
+        inspections: nextInspections,
+        ...rates,
+      };
+    });
+
+    // Record in mill audit trail
+    if (updatedRoll) {
+      useAuditStore.getState().addLog({
+        userName: updatedRoll.inspectorName || 'Quality Manager',
+        userRole: 'QUALITY_INSPECTOR',
+        action: 'QUALITY_UPDATED',
+        target: `Roll ${updatedRoll.rollId} (${updatedRoll.orderId})`,
+        details: `Quality updated to ${updatedRoll.result}. Grade: ${updatedRoll.grade || 'Standard'}. Defect: ${updatedRoll.defectType || 'None'}. GSM: ${updatedRoll.measuredGsm || 'N/A'}.`,
+        badgeColor: updatedRoll.result === 'PASS' ? 'green' : updatedRoll.result === 'REJECT' ? 'red' : 'orange',
+      });
+    }
+
+    return updatedRoll;
+  },
+
+  // Record a new inspection for a completed production batch or roll
   addInspection: (inspectionData) => {
+    const nextRollNum = get().inspections.length + 105;
+    const rollId = inspectionData.rollId || `R-${nextRollNum}`;
+
     const newRecord = {
-      rollId: inspectionData.rollId || `R-${Math.floor(108 + Math.random() * 200)}`,
+      rollId,
+      orderId: inspectionData.orderId || 'ORD-25',
+      buyerName: inspectionData.buyerName || 'Everest Customer',
+      fabricType: inspectionData.fabricType || 'Single Jersey 100% Cotton (180 GSM)',
+      colour: inspectionData.colour || 'Standard Shade',
+      machineId: inspectionData.machineId || 'M-W01',
+      machineCode: inspectionData.machineCode || 'W-01',
+      machineName: inspectionData.machineName || 'Loom Floor',
+      operatorId: inspectionData.operatorId || 'W-001',
+      operatorCode: inspectionData.operatorCode || 'O-01',
+      operatorName: inspectionData.operatorName || 'Floor Operator',
+      inspectorName: inspectionData.inspectorName || 'Quality Manager (Sunil Verma)',
       inspectionDate: new Date().toISOString().replace('T', ' ').substring(0, 16),
-      inspectorName: inspectionData.inspectorName || 'Sunil Verma (QA Lead)',
+      rollLengthMeters: Number(inspectionData.rollLengthMeters) || 150,
+      measuredGsm: Number(inspectionData.measuredGsm) || 180,
+      shrinkagePercent: Number(inspectionData.shrinkagePercent) || 1.5,
+      tensileStrength: inspectionData.tensileStrength || '350 N',
+      colorFastness: inspectionData.colorFastness || 'Grade 4.5',
+      grade: inspectionData.grade || (inspectionData.result === 'PASS' ? 'Grade A (Export)' : inspectionData.result === 'REJECT' ? 'Substandard / Rejected' : 'Grade B (Commercial)'),
+      fourPointScore: Number(inspectionData.fourPointScore) || (inspectionData.result === 'PASS' ? 5 : 28),
+      defectType: inspectionData.defectType || 'None',
+      defectSeverity: inspectionData.defectSeverity || (inspectionData.result === 'PASS' ? 'NONE' : 'MODERATE'),
+      defectLocation: inspectionData.defectLocation || 'None',
+      defectDescription: inspectionData.defectDescription || (inspectionData.result === 'PASS' ? 'Quality inspection passed ASTM D5430 standard.' : 'Quality discrepancies recorded.'),
+      result: inspectionData.result || 'PASS',
+      warehouseLocation: inspectionData.warehouseLocation || (inspectionData.result === 'PASS' ? 'Finished Warehouse' : 'Quarantine Section Q-1'),
+      traceabilityNotes: inspectionData.traceabilityNotes || `Inspected after production completion for order ${inspectionData.orderId}.`,
       ...inspectionData,
     };
 
-    set((state) => ({
-      inspections: [newRecord, ...state.inspections],
-    }));
+    set((state) => {
+      const nextInspections = [newRecord, ...state.inspections];
+      const rates = calculateRates(nextInspections);
+      return {
+        inspections: nextInspections,
+        ...rates,
+      };
+    });
 
     // Record audit trail
     useAuditStore.getState().addLog({
       userName: newRecord.inspectorName,
       userRole: 'QUALITY_INSPECTOR',
-      action: 'QUALITY_INSPECTION',
-      target: `Roll ${newRecord.rollId}`,
-      details: `Inspection verdict: ${newRecord.result}. Defect: ${newRecord.defectType || 'None'}.`,
+      action: 'QUALITY_INSPECTION_RECORDED',
+      target: `Roll ${newRecord.rollId} (${newRecord.orderId})`,
+      details: `Product quality inspection logged: ${newRecord.result}. Grade: ${newRecord.grade}. Defect: ${newRecord.defectType}.`,
       badgeColor: newRecord.result === 'PASS' ? 'green' : newRecord.result === 'REJECT' ? 'red' : 'orange',
     });
 
@@ -198,9 +538,9 @@ export const useQualityStore = create((set, get) => ({
 
   // Traceability graph builder: Given a roll or order, constructs the complete lineage
   getTraceabilityData: (identifier) => {
-    const cleanId = identifier.trim().toUpperCase();
+    const cleanId = (identifier || '').trim().toUpperCase();
     const roll = get().inspections.find(
-      (r) => r.rollId.toUpperCase() === cleanId || r.orderId.toUpperCase() === cleanId
+      (r) => (r.rollId || '').toUpperCase() === cleanId || (r.orderId || '').toUpperCase() === cleanId
     );
 
     if (roll) {
@@ -220,7 +560,7 @@ export const useQualityStore = create((set, get) => ({
         traceabilityNotes: roll.traceabilityNotes,
         inspectionDate: roll.inspectionDate,
         rawMaterialLot: 'RAW-COT-001 (Vardhman Combed Cotton 40s)',
-        productionStage: 'Weaving & Sizing',
+        productionStage: 'Weaving & Finishing QA',
         dispatchEligible: roll.result === 'PASS',
       };
     }

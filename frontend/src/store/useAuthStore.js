@@ -58,8 +58,17 @@ export const useAuthStore = create((set, get) => ({
   },
 
   hasPermission: (permission) => {
+    if (get().roles.includes('ADMIN') || get().activeRole === 'ADMIN') return true;
     const perms = get().permissions || [];
-    return perms.includes(permission) || perms.includes('*');
+    if (perms.includes(permission) || perms.includes('*')) return true;
+    if (get().activeRole === 'PRODUCTION_MANAGER' || get().roles.includes('PRODUCTION_MANAGER')) {
+      const allowedPrefixes = ['production.', 'machines.', 'inventory.', 'workforce.', 'quality.', 'sales.'];
+      if (allowedPrefixes.some((p) => permission.startsWith(p))) return true;
+    }
+    if (get().activeRole === 'BUYER' || get().roles.includes('BUYER')) {
+      if (permission === 'sales.read' || permission === 'buyer.read') return true;
+    }
+    return false;
   },
 
   switchRole: (role) => {

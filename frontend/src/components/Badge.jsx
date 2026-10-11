@@ -15,6 +15,10 @@ const BADGE_STYLES = {
 
   // Order & Dispatch statuses
   PENDING: 'bg-amber-50 text-amber-700 border border-amber-200/60',
+  AWAITING_COSTING: 'bg-amber-50 text-amber-800 border border-amber-200/60 font-semibold',
+  AWAITING_BUYER_APPROVAL: 'bg-purple-50 text-purple-700 border border-purple-200/60 font-bold',
+  APPROVED_BY_BUYER: 'bg-emerald-50 text-emerald-800 border border-emerald-200/60 font-bold',
+  CONFIRMED: 'bg-blue-50 text-blue-700 border border-blue-200/60',
   IN_PRODUCTION: 'bg-cyan-50 text-[#00acc1] border border-cyan-200/60 font-semibold',
   COMPLETED: 'bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold',
   READY_FOR_DISPATCH: 'bg-teal-50 text-teal-700 border border-teal-200/60',
