@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  TrendingUp,
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -35,6 +36,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: 'Quality & Defects', to: '/quality', icon: CheckCircle2, permission: 'quality.read' },
     { name: 'Dispatch & Invoices', to: '/dispatch', icon: Truck, permission: 'sales.execute' },
     { name: 'Cost & Profit', to: '/finance', icon: Coins, permission: 'finance.read' },
+    { name: 'Financial Analytics', to: '/analytics', icon: TrendingUp, permission: 'analytics.read' },
     { name: 'Traceability Matrix', to: '/traceability', icon: GitBranch, permission: 'quality.read' },
     { name: 'Audit Trail', to: '/audit-log', icon: History, permission: 'audit_logs.read' },
     { name: 'System Settings', to: '/settings', icon: Settings, permission: 'users.manage' },
@@ -45,9 +47,51 @@ export default function Sidebar({ isOpen, onClose }) {
     activeRole === 'BUYER' ||
     user?.email === 'buyer@textile.local';
 
+  const isProductionManager =
+    user?.roles?.some((r) => {
+      const name = typeof r === 'string' ? r : r?.name;
+      return name === 'PRODUCTION_MANAGER' || name === 'PRODUCTION_PLANNER' || name === 'PRODUCTION_SUPERVISOR';
+    }) ||
+    activeRole === 'PRODUCTION_MANAGER' ||
+    activeRole === 'PRODUCTION_PLANNER' ||
+    activeRole === 'PRODUCTION_SUPERVISOR';
+
+  const isQualityManager =
+    user?.roles?.some((r) => {
+      const name = typeof r === 'string' ? r : r?.name;
+      return name === 'QUALITY_INSPECTOR' || name === 'QUALITY_MANAGER' || name === 'QUALITY_APPROVER';
+    }) ||
+    activeRole === 'QUALITY_INSPECTOR' ||
+    activeRole === 'QUALITY_MANAGER' ||
+    activeRole === 'QUALITY_APPROVER' ||
+    user?.email === 'quality@textile.local';
+
+  const isAccountant =
+    user?.roles?.some((r) => {
+      const name = typeof r === 'string' ? r : r?.name;
+      return name === 'ACCOUNTANT' || name === 'FINANCE_OFFICER';
+    }) ||
+    activeRole === 'ACCOUNTANT' ||
+    activeRole === 'FINANCE_OFFICER' ||
+    user?.email === 'accountant@textile.local';
+
   const visibleNav = isBuyer
     ? [{ name: 'My Orders & Portal', to: '/buyer-portal', icon: Globe }]
-    : navItems.filter((item) => !item.permission || hasPermission(item.permission));
+    : isQualityManager
+    ? [
+        { name: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+        { name: 'Quality & Defects', to: '/quality', icon: CheckCircle2 },
+      ]
+    : isAccountant
+    ? [
+        { name: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+        { name: 'Cost & Finance', to: '/finance', icon: Coins },
+        { name: 'Financial Analytics', to: '/analytics', icon: TrendingUp },
+      ]
+    : navItems.filter((item) => {
+        if (isProductionManager && item.to === '/quality') return false;
+        return !item.permission || hasPermission(item.permission);
+      });
 
   const handleMouseEnter = (name, e) => {
     if (isSidebarExpanded) return;

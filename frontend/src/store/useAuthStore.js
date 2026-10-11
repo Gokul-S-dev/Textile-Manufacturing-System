@@ -8,7 +8,7 @@ export const USER_ROLES = {
   PRODUCTION_MANAGER: { id: 'PRODUCTION_MANAGER', name: 'Production Mgr', badge: 'Looms & Floor' },
   STORE_MANAGER: { id: 'STORE_MANAGER', name: 'Store Manager', badge: 'Yarn & Warehouse' },
   QUALITY_INSPECTOR: { id: 'QUALITY_INSPECTOR', name: 'Quality Inspector', badge: 'Rolls & Defects' },
-  ACCOUNTANT: { id: 'ACCOUNTANT', name: 'Accountant', badge: 'Cost & Wages' },
+  ACCOUNTANT: { id: 'ACCOUNTANT', name: 'Accountant', badge: 'Ledger & Analytics' },
   BUYER: { id: 'BUYER', name: 'Buyer Portal', badge: 'Track ORD-1024' },
 };
 
@@ -59,11 +59,27 @@ export const useAuthStore = create((set, get) => ({
 
   hasPermission: (permission) => {
     if (get().roles.includes('ADMIN') || get().activeRole === 'ADMIN') return true;
+    if (
+      get().activeRole === 'ACCOUNTANT' ||
+      get().roles.includes('ACCOUNTANT') ||
+      get().activeRole === 'FINANCE_OFFICER' ||
+      get().roles.includes('FINANCE_OFFICER') ||
+      get().user?.email === 'accountant@textile.local'
+    ) {
+      return (
+        permission.startsWith('finance.') ||
+        permission.startsWith('analytics.') ||
+        permission === 'sales.read'
+      );
+    }
     const perms = get().permissions || [];
     if (perms.includes(permission) || perms.includes('*')) return true;
     if (get().activeRole === 'PRODUCTION_MANAGER' || get().roles.includes('PRODUCTION_MANAGER')) {
-      const allowedPrefixes = ['production.', 'machines.', 'inventory.', 'workforce.', 'quality.', 'sales.'];
+      const allowedPrefixes = ['production.', 'machines.', 'inventory.', 'workforce.', 'sales.'];
       if (allowedPrefixes.some((p) => permission.startsWith(p))) return true;
+    }
+    if (get().activeRole === 'QUALITY_INSPECTOR' || get().roles.includes('QUALITY_INSPECTOR')) {
+      return permission.startsWith('quality.') || permission === 'analytics.read';
     }
     if (get().activeRole === 'BUYER' || get().roles.includes('BUYER')) {
       if (permission === 'sales.read' || permission === 'buyer.read') return true;

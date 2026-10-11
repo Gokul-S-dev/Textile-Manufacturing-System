@@ -41,7 +41,7 @@ const ROLES_AND_PERMISSIONS = {
       'production.commit_schedule', 'production.execute', 'production.override', 'production.read', 
       'machines.manage', 'machines.read', 'machines.status.manage', 'inventory.read', 
       'inventory.reserve', 'inventory.transfer', 'warehouse.read', 'workforce.assign', 'workforce.read',
-      'analytics.read', 'quality.read', 'sales.read'
+      'analytics.read', 'sales.read'
     ]
   },
   'STORE_MANAGER': {
@@ -59,17 +59,15 @@ const ROLES_AND_PERMISSIONS = {
     description: 'Quality Control Inspector - Rolls & Defects',
     email: 'quality@textile.local',
     permissions: [
-      'quality.read', 'quality.execute', 'quality.manage', 'quality.approve', 'production.read',
-      'analytics.read', 'machines.read', 'inventory.read', 'sales.read'
+      'quality.read', 'quality.execute', 'quality.manage', 'quality.approve', 'analytics.read'
     ]
   },
   'ACCOUNTANT': {
     name: 'ACCOUNTANT',
-    description: 'Finance Officer - Cost & Wages',
+    description: 'Finance Officer - Cost Accounting & Analytics',
     email: 'accountant@textile.local',
     permissions: [
-      'finance.read', 'finance.manage', 'finance.approve', 'sales.read', 'purchasing.read', 
-      'attendance.manage', 'analytics.read'
+      'finance.read', 'finance.manage', 'finance.approve', 'analytics.read'
     ]
   },
   'BUYER': {
