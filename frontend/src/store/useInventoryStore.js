@@ -4,6 +4,7 @@ import { inventoryService } from '../services/inventoryService';
 export const useInventoryStore = create((set, get) => ({
   items: [],
   isLoading: false,
+  error: null,
 
   getTotalStockKg: () => {
     return get().items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
@@ -14,7 +15,7 @@ export const useInventoryStore = create((set, get) => ({
   },
 
   fetchItems: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
       const res = await inventoryService.getItems();
       if (res && res.data && Array.isArray(res.data)) {
@@ -39,13 +40,13 @@ export const useInventoryStore = create((set, get) => ({
             isActive: bItem.isActive !== false,
           };
         });
-        set({ items: backendItems, isLoading: false });
+        set({ items: backendItems, isLoading: false, error: null });
         return backendItems;
       }
-      set({ items: [], isLoading: false });
+      set({ items: [], isLoading: false, error: null });
       return [];
-    } catch {
-      set({ items: [], isLoading: false });
+    } catch (error) {
+      set({ items: [], isLoading: false, error: error.message || 'Unable to load inventory stock.' });
       return [];
     }
   },

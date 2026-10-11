@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Bell, CheckCircle, Clock } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 
@@ -14,9 +14,7 @@ const NotificationsPage = () => {
 
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get('http://192.168.137.1:5000/api/v1/notifications', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await api.get('/notifications');
       setNotifications(res.data);
     } catch (err) {
       setError('Failed to fetch notifications');
@@ -27,9 +25,7 @@ const NotificationsPage = () => {
 
   const markAsRead = async (id) => {
     try {
-      await axios.post(`http://192.168.137.1:5000/api/v1/notifications/${id}/read`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      await api.post(`/notifications/${id}/read`, {});
       fetchNotifications();
     } catch (err) {
       alert('Failed to mark read');
@@ -38,9 +34,7 @@ const NotificationsPage = () => {
 
   const markAllAsRead = async () => {
     try {
-      await axios.post(`http://192.168.137.1:5000/api/v1/notifications/read-all`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      await api.post(`/notifications/read-all`, {});
       fetchNotifications();
     } catch (err) {
       alert('Failed to mark all read');
@@ -66,7 +60,7 @@ const NotificationsPage = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <ul className="divide-y divide-gray-200">
           {notifications.map(notif => (
-            <li key={notif.id} className={\`p-4 hover:bg-gray-50 flex items-start justify-between \${notif.isRead ? 'opacity-60' : 'bg-blue-50'}\`}>
+            <li key={notif.id} className={`p-4 hover:bg-gray-50 flex items-start justify-between ${notif.isRead ? 'opacity-60' : 'bg-blue-50'}`}>
               <div className="flex-1">
                 <div className="flex items-center">
                   <p className="text-sm font-medium text-gray-900">{notif.title}</p>
@@ -95,3 +89,5 @@ const NotificationsPage = () => {
 };
 
 export default NotificationsPage;
+
+

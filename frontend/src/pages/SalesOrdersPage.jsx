@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { ShoppingCart, Package, Truck, CheckCircle, Plus } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 
@@ -14,9 +14,7 @@ const SalesOrdersPage = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get('http://192.168.137.1:5000/api/v1/sales/sales-orders', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await api.get('/sales/sales-orders');
       setOrders(res.data);
     } catch (err) {
       setError('Failed to fetch sales orders');
@@ -27,9 +25,7 @@ const SalesOrdersPage = () => {
 
   const allocateStock = async (id) => {
     try {
-      await axios.post(`http://192.168.137.1:5000/api/v1/sales/sales-orders/${id}/allocate`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      await api.post(`/sales/sales-orders/${id}/allocate`);
       fetchOrders();
     } catch (err) {
       alert('Failed to allocate stock: ' + (err.response?.data?.message || err.message));
@@ -69,12 +65,12 @@ const SalesOrdersPage = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.orderNumber}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.customer?.name || 'Unknown'}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={\`px-2 inline-flex text-xs leading-5 font-semibold rounded-full \${
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                     order.status === 'DRAFT' ? 'bg-gray-100 text-gray-800' :
                     order.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' :
                     order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-800' :
                     'bg-green-100 text-green-800'
-                  }\`}>
+                  }`}>
                     {order.status}
                   </span>
                 </td>
@@ -104,3 +100,5 @@ const SalesOrdersPage = () => {
 };
 
 export default SalesOrdersPage;
+
+

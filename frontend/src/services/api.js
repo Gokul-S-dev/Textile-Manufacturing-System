@@ -1,19 +1,35 @@
 import axios from 'axios';
 
-// Default to the user's specified IP, with fallback to localhost or custom configured URL
 const STORAGE_KEY_API_URL = 'textail_api_base_url';
-const DEFAULT_API_BASE_URL = 'http://localhost:5000/api/v1';
+const DEFAULT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
+
+const normalizeApiUrl = (url) => {
+  if (!url) return DEFAULT_API_BASE_URL;
+  const normalized = String(url).trim().replace(/\/+$/, '');
+
+  if (/\/api$/i.test(normalized)) {
+    return `${normalized}/v1`;
+  }
+
+  if (!/\/api\/v1$/i.test(normalized) && !/\/api$/i.test(normalized)) {
+    return `${normalized}/api/v1`;
+  }
+
+  return normalized;
+};
 
 export const getApiBaseUrl = () => {
-  return localStorage.getItem(STORAGE_KEY_API_URL) || DEFAULT_API_BASE_URL;
+  return normalizeApiUrl(localStorage.getItem(STORAGE_KEY_API_URL) || DEFAULT_API_BASE_URL);
 };
 
 export const setApiBaseUrl = (url) => {
-  if (url) {
-    localStorage.setItem(STORAGE_KEY_API_URL, url.replace(/\/+$/, ''));
+  const normalized = normalizeApiUrl(url);
+  if (normalized) {
+    localStorage.setItem(STORAGE_KEY_API_URL, normalized);
   } else {
     localStorage.removeItem(STORAGE_KEY_API_URL);
   }
+  return normalized;
 };
 
 // Create Axios client

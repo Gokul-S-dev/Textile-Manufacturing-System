@@ -1,13 +1,43 @@
-import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
 import { logAudit } from '../audit/audit.service.js';
 import { revokeAllUserTokens } from '../auth/token.service.js';
-
-const prisma = new PrismaClient();
+import prisma from '../../config/db.js';
 
 const selectSafeUser = {
   id: true, email: true, name: true, department: true, isActive: true, createdAt: true,
   roles: { select: { role: { select: { name: true } } } }
+};
+
+const getActorPermissionSet = async (tx, actorId) => {
+  const actor = await tx.user.findUnique({
+    where: { id: actorId },
+    select: {
+      roles: {
+        select: {
+          role: { select: { permissions: { select: { permission: { select: { name: true } } } } } }
+        }
+      }
+    }
+  });
+  return new Set(actor?.roles.flatMap(({ role }) => role.permissions.map(({ permission }) => permission.name)) || []);
+};
+
+const assertDelegatedRoles = async (tx, actorId, targetUserId, roles) => {
+  if (actorId === targetUserId) throw { status: 403, message: 'Users cannot change their own roles' };
+
+  const actorPermissions = await getActorPermissionSet(tx, actorId);
+  if (!actorPermissions.has('roles.assign')) {
+    throw { status: 403, message: 'Role assignment is not delegated to this user' };
+  }
+
+  const rolePermissions = await tx.rolePermission.findMany({
+    where: { roleId: { in: roles.map((role) => role.id) } },
+    select: { permission: { select: { name: true } } }
+  });
+  const unauthorizedPermission = rolePermissions.find(({ permission }) => !actorPermissions.has(permission.name));
+  if (unauthorizedPermission) {
+    throw { status: 403, message: 'Cannot delegate permissions that the actor does not possess' };
+  }
 };
 
 export const createUser = async (data, actorId) => {
@@ -16,6 +46,7 @@ export const createUser = async (data, actorId) => {
   return await prisma.$transaction(async (tx) => {
     const roles = await tx.role.findMany({ where: { name: { in: data.roles } } });
     if (roles.length !== data.roles.length) throw { status: 400, message: 'One or more roles invalid' };
+    await assertDelegatedRoles(tx, actorId, null, roles);
 
 
 
@@ -43,6 +74,7 @@ export const updateUserRoles = async (userId, newRoles, actorId) => {
   return await prisma.$transaction(async (tx) => {
     const roles = await tx.role.findMany({ where: { name: { in: newRoles } } });
     if (roles.length !== newRoles.length) throw { status: 400, message: 'One or more roles invalid' };
+    await assertDelegatedRoles(tx, actorId, userId, roles);
 
     await tx.userRole.deleteMany({ where: { userId } });
     
@@ -59,16 +91,20 @@ export const updateUserRoles = async (userId, newRoles, actorId) => {
 };
 
 export const updateUserStatus = async (userId, isActive, actorId) => {
-  // Prevent deactivating the last active SUPER_ADMIN
+  if (userId === actorId && !isActive) {
+    throw { status: 403, message: 'Users cannot deactivate their own account' };
+  }
+
+  // Prevent deactivating the last active privileged account.
   if (!isActive) {
     const userToDeactivate = await prisma.user.findUnique({ where: { id: userId }, include: { roles: { include: { role: true } } } });
-    const isSuperAdmin = userToDeactivate.roles.some(ur => ur.role.name === 'SUPER_ADMIN');
+    const isPrivileged = userToDeactivate.roles.some(ur => ['SUPER_ADMIN', 'ADMIN'].includes(ur.role.name));
     
-    if (isSuperAdmin) {
-      const activeSuperAdmins = await prisma.userRole.count({
-        where: { role: { name: 'SUPER_ADMIN' }, user: { isActive: true, id: { not: userId } } }
+    if (isPrivileged) {
+      const activePrivilegedUsers = await prisma.userRole.count({
+        where: { role: { name: { in: ['SUPER_ADMIN', 'ADMIN'] } }, user: { isActive: true, id: { not: userId } } }
       });
-      if (activeSuperAdmins === 0) throw { status: 403, message: 'Cannot deactivate the last active SUPER_ADMIN' };
+      if (activePrivilegedUsers === 0) throw { status: 403, message: 'Cannot deactivate the last active privileged account' };
     }
   }
 

@@ -34,7 +34,7 @@ export const salesService = {
   async getSalesOrders() {
     return prisma.customerOrder.findMany({
       include: { customer: true, lines: true },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { orderDate: 'desc' }
     });
   },
 
@@ -110,7 +110,7 @@ export const salesService = {
 
         const balances = await tx.inventoryBalance.findMany({
           where: { itemId: line.itemId, status: 'AVAILABLE' },
-          orderBy: { createdAt: 'asc' } // FIFO
+          orderBy: { updatedAt: 'asc' } // FIFO
         });
 
         let lineAllocated = 0;
@@ -217,7 +217,95 @@ export const salesService = {
 
   async dispatchShipment(id, userId) {
     return prisma.$transaction(async (tx) => {
-      const shipment = await tx.shipment.update({
+      const shipment = await tx.shipment.findUnique({
+        where: { id },
+        include: { order: { include: { lines: true } } }
+      });
+      if (!shipment) throw createError(404, 'Shipment not found');
+      if (['DISPATCHED', 'IN_TRANSIT', 'DELIVERED'].includes(shipment.status)) {
+        throw createError(409, 'Shipment has already been dispatched');
+      }
+      if (['CANCELLED', 'ON_HOLD'].includes(shipment.order.status)) {
+        throw createError(400, `Cannot dispatch an order in ${shipment.order.status} status`);
+      }
+
+      const reservations = await tx.finishedGoodsReservation.findMany({
+        where: { orderId: shipment.orderId, status: 'RESERVED' }
+      });
+      const batchIds = reservations.map((reservation) => reservation.batchId).filter(Boolean);
+      if (batchIds.length > 0) {
+        const blockedInspection = await tx.inspectionRecord.findFirst({
+          where: {
+            batchId: { in: batchIds },
+            status: { in: ['FAILED', 'ON_HOLD'] }
+          }
+        });
+        if (blockedInspection) {
+          throw createError(409, 'Dispatch blocked by a failed or held quality inspection');
+        }
+      }
+
+      for (const reservation of reservations) {
+        const balance = await tx.inventoryBalance.findFirst({
+          where: {
+            itemId: reservation.itemId,
+            batchId: reservation.batchId,
+            status: 'AVAILABLE'
+          }
+        });
+        if (!balance || Number(balance.quantity) < Number(reservation.quantity)) {
+          throw createError(409, 'Insufficient finished-goods stock for dispatch');
+        }
+
+        const previousBalance = Number(balance.quantity);
+        const newBalance = previousBalance - Number(reservation.quantity);
+        await tx.inventoryBalance.update({
+          where: { id: balance.id },
+          data: {
+            quantity: newBalance,
+            reservedQuantity: Math.max(0, Number(balance.reservedQuantity) - Number(reservation.quantity))
+          }
+        });
+        await tx.stockMovement.create({
+          data: {
+            itemId: reservation.itemId,
+            warehouseId: balance.warehouseId,
+            batchId: reservation.batchId,
+            type: 'TRANSFER_OUT',
+            quantity: reservation.quantity,
+            previousBalance,
+            newBalance,
+            referenceId: id,
+            reason: 'Finished goods dispatch',
+            createdBy: userId
+          }
+        });
+        await tx.finishedGoodsReservation.update({
+          where: { id: reservation.id },
+          data: { status: 'CONSUMED' }
+        });
+      }
+
+      for (const line of shipment.order.lines) {
+        const fulfilled = reservations
+          .filter((reservation) => reservation.itemId === line.itemId)
+          .reduce((sum, reservation) => sum + Number(reservation.quantity), 0);
+        if (fulfilled > 0) {
+          await tx.customerOrderLine.update({
+            where: { id: line.id },
+            data: { fulfilledQty: Number(line.fulfilledQty) + fulfilled }
+          });
+        }
+      }
+
+      const refreshedLines = await tx.customerOrderLine.findMany({ where: { orderId: shipment.orderId } });
+      const orderFulfilled = refreshedLines.every((line) => Number(line.fulfilledQty) >= Number(line.quantity));
+      await tx.customerOrder.update({
+        where: { id: shipment.orderId },
+        data: { status: orderFulfilled ? 'FULFILLED' : 'PARTIAL' }
+      });
+
+      const dispatchedShipment = await tx.shipment.update({
         where: { id },
         data: { status: 'DISPATCHED', dispatchDate: new Date(), operatorId: userId }
       });
@@ -229,7 +317,7 @@ export const salesService = {
           location: 'Warehouse Dock'
         }
       });
-      return shipment;
+      return dispatchedShipment;
     });
   },
 

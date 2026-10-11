@@ -1,10 +1,8 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
 import { env } from '../../config/env.js';
 import argon2 from 'argon2';
-
-const prisma = new PrismaClient();
+import prisma from '../../config/db.js';
 
 export const generateTokens = async (user) => {
   // Access token payload: include permissions directly for fast RBAC checks

@@ -8,12 +8,12 @@ let user;
 beforeAll(async () => {
   // Login as admin
   const res = await request(app).post('/api/v1/auth/login').send({
-    email: 'admin@textile.com',
-    password: 'password123'
+    email: 'admin@textile.local',
+    password: 'Admin@123!'
   });
-  token = res.body.token;
+  token = res.body.accessToken;
 
-  user = await prisma.user.findUnique({ where: { email: 'admin@textile.com' } });
+  user = await prisma.user.findUnique({ where: { email: 'admin@textile.local' } });
 });
 
 describe('Analytics Module', () => {

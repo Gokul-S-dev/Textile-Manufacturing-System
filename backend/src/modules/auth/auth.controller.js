@@ -1,8 +1,6 @@
 import { authenticateUser, changeUserPassword } from './auth.service.js';
 import { rotateRefreshToken, revokeAllUserTokens } from './token.service.js';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../../config/db.js';
 
 const cookieOptions = {
   httpOnly: true,

@@ -41,9 +41,9 @@ export const analyticsService = {
   },
 
   async getQualityMetrics() {
-    const totalInspections = await prisma.inspection.count();
-    const passed = await prisma.inspection.count({ where: { result: 'PASSED' } });
-    const failed = await prisma.inspection.count({ where: { result: 'FAILED' } });
+    const totalInspections = await prisma.qualityInspection.count();
+    const passed = await prisma.qualityInspection.count({ where: { status: 'PASSED' } });
+    const failed = await prisma.qualityInspection.count({ where: { status: 'REJECTED' } });
     
     const passRate = totalInspections > 0 ? (passed / totalInspections) * 100 : 0;
     const failRate = totalInspections > 0 ? (failed / totalInspections) * 100 : 0;

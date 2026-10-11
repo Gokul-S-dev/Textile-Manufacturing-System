@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { BarChart2, TrendingUp, PieChart, Activity, Download } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 
@@ -16,9 +16,7 @@ const AnalyticsPage = () => {
   const fetchMetrics = async (tab) => {
     setLoading(true);
     try {
-      const res = await axios.get(\`http://192.168.137.1:5000/api/v1/analytics/\${tab}\`, {
-        headers: { Authorization: \`Bearer \${localStorage.getItem('token')}\` }
-      });
+      const res = await api.get(`/analytics/${tab}`);
       setMetrics(res.data);
     } catch (err) {
       setError('Failed to fetch analytics data');
@@ -32,14 +30,13 @@ const AnalyticsPage = () => {
       // Need a valid type for export, finance or production mapped roughly from tab
       let exportType = activeTab === 'executive' ? 'finance' : activeTab;
       
-      const res = await axios.get(\`http://192.168.137.1:5000/api/v1/analytics/reports/\${exportType}/export\`, {
-        headers: { Authorization: \`Bearer \${localStorage.getItem('token')}\` },
+      const res = await api.get(`/analytics/reports/${exportType}/export`, {
         responseType: 'blob'
       });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', \`\${exportType}-report.csv\`);
+      link.setAttribute('download', `${exportType}-report.csv`);
       document.body.appendChild(link);
       link.click();
     } catch (err) {
@@ -76,11 +73,11 @@ const AnalyticsPage = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={\`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm \${
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === tab.id
                   ? 'border-indigo-500 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }\`}
+              }`}
             >
               {tab.label}
             </button>
@@ -100,7 +97,7 @@ const AnalyticsPage = () => {
               <div key={key} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
                 <p className="text-sm text-gray-500 font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">
-                  {typeof value === 'number' && key.toLowerCase().includes('rate') ? \`\${value} %\` : value}
+                  {typeof value === 'number' && key.toLowerCase().includes('rate') ? `${value} %` : value}
                 </p>
               </div>
             );
@@ -112,3 +109,5 @@ const AnalyticsPage = () => {
 };
 
 export default AnalyticsPage;
+
+

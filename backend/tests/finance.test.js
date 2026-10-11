@@ -8,10 +8,10 @@ let invoice;
 beforeAll(async () => {
   // Login as admin
   const res = await request(app).post('/api/v1/auth/login').send({
-    email: 'admin@textile.com',
-    password: 'password123'
+    email: 'admin@textile.local',
+    password: 'Admin@123!'
   });
-  token = res.body.token;
+  token = res.body.accessToken;
 
   // Create a customer
   const custRes = await request(app)

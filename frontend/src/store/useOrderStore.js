@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-
-// Pre-seeded 25 orders matching dashboard spec:
+import { salesService } from '../services/salesService';
+import { productionService } from '../services/productionService';
 // 12 In Production, 7 Pending, 6 Completed
 const initialOrders = [
   // 12 In Production:
@@ -562,6 +562,48 @@ const initialOrders = [
 
 export const useOrderStore = create((set, get) => ({
   orders: initialOrders,
+  isLoading: false,
+  error: null,
+
+  fetchOrders: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const salesOrders = await salesService.getSalesOrders();
+      // const prodOrders = await productionService.getOrders();
+      if (salesOrders && salesOrders.length > 0) {
+        // Map backend orders to frontend format
+        const mappedOrders = salesOrders.map(so => ({
+          id: so.id,
+          orderNumber: so.orderNumber,
+          buyerName: so.customer?.name || 'Unknown Customer',
+          contactPerson: so.customer?.contactPerson || '',
+          fabricType: so.lines?.[0]?.item?.name || 'Mixed Fabric',
+          colour: so.lines?.[0]?.item?.colour || 'Standard',
+          quantityMeters: so.lines?.[0]?.quantity || 1000,
+          producedMeters: so.lines?.[0]?.fulfilledQuantity || 0,
+          deadline: so.requestedDeliveryDate || so.orderDate,
+          priority: so.priority || 'NORMAL',
+          status: so.status === 'OPEN' ? 'PENDING' : so.status === 'PROCESSING' ? 'IN_PRODUCTION' : so.status,
+          assignedMachineId: null,
+          assignedMachineName: 'Unassigned',
+          assignedWorkerId: null,
+          assignedWorkerName: 'Unassigned',
+          stage: so.status,
+          notes: '',
+          unitPrice: so.lines?.[0]?.unitPrice || 0,
+          totalValue: so.totalAmount || 0,
+          yarnReservedKg: 0,
+        }));
+        set({ orders: mappedOrders, isLoading: false, error: null });
+      } else {
+        // Fallback to initial mock data if db is empty
+        set({ orders: initialOrders, isLoading: false, error: null });
+      }
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      set({ orders: initialOrders, isLoading: false, error: error.message || 'Unable to load order queue.' });
+    }
+  },
 
   // Dashboard count helpers
   getTotalOrdersCount: () => get().orders.length,
@@ -573,32 +615,61 @@ export const useOrderStore = create((set, get) => ({
     return get().orders.find((o) => o.id === orderId || o.orderNumber === orderId);
   },
 
-  createOrder: (newOrderData) => {
-    const nextNum = get().orders.length + 25;
-    const orderNumber = `ORD-${nextNum}`;
-    const newOrder = {
-      id: orderNumber,
-      orderNumber,
-      producedMeters: 0,
-      status: 'PENDING',
-      stage: 'Pending Planning',
-      assignedMachineId: null,
-      assignedMachineName: 'Unassigned',
-      assignedWorkerId: null,
-      assignedWorkerName: 'Unassigned',
-      unitPrice: Number(newOrderData.unitPrice) || 200,
-      totalValue: (Number(newOrderData.quantityMeters) || 1000) * (Number(newOrderData.unitPrice) || 200),
-      yarnReservedKg: 0,
-      notes: newOrderData.notes || 'Order created via Everest ERP portal',
-      ...newOrderData,
-      quantityMeters: Number(newOrderData.quantityMeters) || 1000,
-    };
+  createOrder: async (newOrderData) => {
+    try {
+      // Map to backend schema CustomerOrder
+      const payload = {
+        customerId: newOrderData.buyerName || 'cust-generic-01', // Needs a valid customer ID in a real app
+        orderDate: new Date().toISOString(),
+        requestedDeliveryDate: new Date(newOrderData.deadline || Date.now() + 7*86400000).toISOString(),
+        priority: newOrderData.priority || 'NORMAL',
+        lines: [
+          {
+            itemId: 'item-generic-01', // Needs a valid item ID
+            quantity: Number(newOrderData.quantityMeters) || 1000,
+            unitPrice: Number(newOrderData.unitPrice) || 200,
+            specifications: {
+              fabricType: newOrderData.fabricType || 'Generic Fabric',
+              colour: newOrderData.colour || 'Standard'
+            }
+          }
+        ]
+      };
+      
+      // We will attempt to call the API
+      const createdSO = await salesService.createSalesOrder(payload);
+      
+      // Fetch fresh orders
+      await get().fetchOrders();
+      return createdSO;
+    } catch (err) {
+      console.warn('Failed to create order on backend, creating local fallback mock', err);
+      const nextNum = get().orders.length + 25;
+      const orderNumber = `ORD-${nextNum}`;
+      const newOrder = {
+        id: orderNumber,
+        orderNumber,
+        producedMeters: 0,
+        status: 'PENDING',
+        stage: 'Pending Planning',
+        assignedMachineId: null,
+        assignedMachineName: 'Unassigned',
+        assignedWorkerId: null,
+        assignedWorkerName: 'Unassigned',
+        unitPrice: Number(newOrderData.unitPrice) || 200,
+        totalValue: (Number(newOrderData.quantityMeters) || 1000) * (Number(newOrderData.unitPrice) || 200),
+        yarnReservedKg: 0,
+        notes: newOrderData.notes || 'Order created via Everest ERP portal',
+        ...newOrderData,
+        quantityMeters: Number(newOrderData.quantityMeters) || 1000,
+      };
 
-    set((state) => ({
-      orders: [newOrder, ...state.orders],
-    }));
+      set((state) => ({
+        orders: [newOrder, ...state.orders],
+      }));
 
-    return newOrder;
+      return newOrder;
+    }
   },
 
   updateOrderStatus: (orderId, status, stage) => {

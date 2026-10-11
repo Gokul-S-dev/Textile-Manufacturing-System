@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Users, UserPlus, Clock } from 'lucide-react';
 
 const Workforce = () => {
@@ -12,7 +12,7 @@ const Workforce = () => {
 
   const fetchEmployees = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/v1/workforce/employees', { withCredentials: true });
+      const res = await api.get('/workforce/employees');
       setEmployees(res.data);
     } catch (err) {
       console.error(err);
@@ -89,3 +89,5 @@ const Workforce = () => {
 };
 
 export default Workforce;
+
+

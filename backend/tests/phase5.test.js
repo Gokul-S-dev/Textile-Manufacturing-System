@@ -1,10 +1,8 @@
 import request from 'supertest';
 import app from '../src/app.js';
-import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
 import { checkInAttendance, assignWorker } from '../src/modules/workforce/workforce.service.js';
-
-const prisma = new PrismaClient();
+import prisma from '../src/config/db.js';
 
 describe('Phase 5: Machines & Workforce', () => {
   let adminTokens;
@@ -15,12 +13,12 @@ describe('Phase 5: Machines & Workforce', () => {
   let run;
 
   beforeAll(async () => {
-    const passwordHash = await argon2.hash('password123');
-    const role = await prisma.role.findFirst({ where: { name: 'SUPER_ADMIN' } });
+    const passwordHash = await argon2.hash('Admin@123!');
+    const role = await prisma.role.findFirst({ where: { name: 'ADMIN' } });
     
     const user = await prisma.user.upsert({
       where: { email: 'hr@test.local' },
-      update: { isActive: true },
+      update: { isActive: true, passwordHash },
       create: {
         email: 'hr@test.local',
         name: 'HR Admin',
@@ -32,7 +30,7 @@ describe('Phase 5: Machines & Workforce', () => {
 
     const res = await request(app).post('/api/v1/auth/login').send({
       email: 'hr@test.local',
-      password: 'password123'
+      password: 'Admin@123!'
     });
     adminTokens = res.body.accessToken;
 

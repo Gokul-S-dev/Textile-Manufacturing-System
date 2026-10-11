@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Box, Plus, TrendingDown } from 'lucide-react';
 
 const Inventory = () => {
@@ -12,7 +12,7 @@ const Inventory = () => {
 
   const fetchItems = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/v1/inventory/items', { withCredentials: true });
+      const res = await api.get('/inventory/items');
       setItems(res.data);
     } catch (err) {
       console.error(err);
@@ -81,3 +81,5 @@ const Inventory = () => {
 };
 
 export default Inventory;
+
+

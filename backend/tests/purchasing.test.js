@@ -1,9 +1,7 @@
 import request from 'supertest';
 import app from '../src/app.js';
-import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
-
-const prisma = new PrismaClient();
+import prisma from '../src/config/db.js';
 
 describe('Purchasing & Goods Receipt', () => {
   let adminTokens;
@@ -12,9 +10,9 @@ describe('Purchasing & Goods Receipt', () => {
   let item;
 
   beforeAll(async () => {
-    // Setup test user with SUPER_ADMIN
-    const passwordHash = await argon2.hash('password123');
-    const role = await prisma.role.findFirst({ where: { name: 'SUPER_ADMIN' } });
+    // Setup test user with ADMIN
+    const passwordHash = await argon2.hash('Admin@123!');
+    const role = await prisma.role.findFirst({ where: { name: 'ADMIN' } });
     
     const user = await prisma.user.upsert({
       where: { email: 'purchasing@test.local' },
@@ -29,7 +27,7 @@ describe('Purchasing & Goods Receipt', () => {
 
     const res = await request(app).post('/api/v1/auth/login').send({
       email: 'purchasing@test.local',
-      password: 'password123'
+      password: 'Admin@123!'
     });
     adminTokens = res.body.accessToken;
 
@@ -99,9 +97,9 @@ describe('Purchasing & Goods Receipt', () => {
     expect(updatedPo.status).toBe('COMPLETED');
     
     // Check Stock Balance Incremented
-    const balance = await prisma.inventoryBalance.findFirst({ where: { itemId: item.id } });
-    expect(Number(balance.quantity)).toBeGreaterThanOrEqual(100);
-    
+    const balances = await prisma.inventoryBalance.findMany({ where: { itemId: item.id } });
+    const totalQty = balances.reduce((sum, b) => sum + Number(b.quantity), 0);
+    expect(totalQty).toBeGreaterThanOrEqual(100);
     // Check Audit Log
     const log = await prisma.auditLog.findFirst({ where: { action: 'GOODS_RECEIPT_CONFIRMED' } });
     expect(log).toBeDefined();

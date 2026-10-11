@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Package, Truck, Activity, CheckSquare } from 'lucide-react';
 
 export default function WarehousePage() {
@@ -14,8 +14,8 @@ export default function WarehousePage() {
   const fetchWarehouseData = async () => {
     try {
       const [fgRes, trRes] = await Promise.all([
-        axios.get('/api/v1/warehouse/finished-goods', { withCredentials: true }),
-        axios.get('/api/v1/warehouse/warehouse-transfers', { withCredentials: true })
+        api.get('/warehouse/finished-goods'),
+        api.get('/warehouse/warehouse-transfers')
       ]);
       setFinishedGoods(fgRes.data || []);
       setTransfers(trRes.data || []);
@@ -93,3 +93,5 @@ export default function WarehousePage() {
     </div>
   );
 }
+
+

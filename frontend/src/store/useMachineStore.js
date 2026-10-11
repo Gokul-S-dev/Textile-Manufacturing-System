@@ -6,15 +6,16 @@ import { workforceService } from '../services/workforceService';
 export const useMachineStore = create((set, get) => ({
   machines: [],
   isLoading: false,
+  error: null,
 
   fetchMachines: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
       const data = await machinesService.getMachines();
-      set({ machines: data, isLoading: false });
+      set({ machines: data, isLoading: false, error: null });
     } catch (error) {
       console.error('Failed to fetch machines', error);
-      set({ isLoading: false, machines: [] });
+      set({ isLoading: false, machines: [], error: error.message || 'Unable to load machine telemetry.' });
     }
   },
 

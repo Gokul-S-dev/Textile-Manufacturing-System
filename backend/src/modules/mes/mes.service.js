@@ -8,8 +8,9 @@ export const mesService = {
         status: { in: ['RELEASED', 'IN_PROGRESS', 'PAUSED'] }
       },
       include: {
-        scheduledStages: { orderBy: { plannedStart: 'asc' } },
-        batches: true
+        ScheduledStage: { orderBy: { plannedStart: 'asc' } },
+        runs: true,
+        ProductionBatch: true
       }
     });
   },
@@ -18,10 +19,9 @@ export const mesService = {
     return prisma.manufacturingOrder.findUnique({
       where: { id: orderId },
       include: {
-        scheduledStages: {
-          include: { runs: true }
-        },
-        delays: true
+        ScheduledStage: true,
+        runs: { include: { rolls: true, consumptions: true } },
+        ProductionDelay: true
       }
     });
   },
@@ -82,7 +82,7 @@ export const mesService = {
   },
 
   async recordRun(data) {
-    const { stageId, machineId, inputQuantity, operatorId } = data;
+    const { stageId, machineId } = data;
     
     const stage = await prisma.scheduledStage.findUnique({
       where: { id: stageId },
@@ -90,14 +90,13 @@ export const mesService = {
     });
     
     if (!stage) throw createError(404, 'Scheduled stage not found');
+    if (!machineId) throw createError(400, 'A machine is required to start a production run');
 
     return prisma.productionRun.create({
       data: {
-        scheduledStageId: stageId,
         orderId: stage.orderId,
         machineId,
         stage: stage.stage,
-        inputQuantity,
         status: 'IN_PROGRESS',
         startTime: new Date()
       }
@@ -106,6 +105,9 @@ export const mesService = {
 
   async recordConsumption(runId, data) {
     const { batchId, quantity } = data;
+    if (!batchId || Number(quantity) <= 0) {
+      throw createError(400, 'A batch and positive consumption quantity are required');
+    }
     
     // Transactional consumption: reduce inventory balance, record MaterialConsumption
     return prisma.$transaction(async (tx) => {
@@ -116,7 +118,7 @@ export const mesService = {
         data: {
           runId,
           batchId,
-          actualQuantity: quantity
+          quantity
         }
       });
       
@@ -129,12 +131,17 @@ export const mesService = {
          });
          
          if (balance) {
-           if (Number(balance.quantity) < quantity) {
+           if (Number(balance.quantity) - Number(balance.reservedQuantity || 0) < quantity) {
              throw createError(400, 'Insufficient physical stock to consume');
            }
+           const previousBalance = Number(balance.quantity);
+           const newBalance = previousBalance - Number(quantity);
            await tx.inventoryBalance.update({
              where: { id: balance.id },
-             data: { quantity: Number(balance.quantity) - quantity }
+             data: {
+               quantity: newBalance,
+               reservedQuantity: Math.max(0, Number(balance.reservedQuantity || 0) - Number(quantity))
+             }
            });
            
            await tx.stockMovement.create({
@@ -142,8 +149,10 @@ export const mesService = {
                itemId: balance.itemId,
                type: 'CONSUMPTION',
                quantity,
-               reference: `RUN-${runId}`,
-               fromWarehouseId: balance.warehouseId,
+               previousBalance,
+               newBalance,
+               referenceId: `RUN-${runId}`,
+               warehouseId: balance.warehouseId,
                batchId
              }
            });
@@ -156,17 +165,34 @@ export const mesService = {
 
   async recordOutput(runId, data) {
     const { acceptedQuantity, rejectedQuantity, wastageQuantity, operatorRemarks } = data;
-    
-    return prisma.productionRun.update({
-      where: { id: runId },
-      data: {
-        acceptedQuantity,
-        rejectedQuantity,
-        wastageQuantity,
-        operatorRemarks,
-        status: 'COMPLETED',
-        endTime: new Date()
+
+    if (Number(acceptedQuantity || 0) < 0 || Number(rejectedQuantity || 0) < 0 || Number(wastageQuantity || 0) < 0) {
+      throw createError(400, 'Production quantities cannot be negative');
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const run = await tx.productionRun.findUnique({ where: { id: runId } });
+      if (!run) throw createError(404, 'Run not found');
+      if (run.status === 'COMPLETED') throw createError(409, 'Production run is already completed');
+
+      const completedRun = await tx.productionRun.update({
+        where: { id: runId },
+        data: { status: 'COMPLETED', endTime: new Date() }
+      });
+
+      if (Number(acceptedQuantity || 0) > 0) {
+        await tx.fabricRoll.create({
+          data: {
+            rollNumber: `ROLL-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+            runId,
+            length: acceptedQuantity,
+            weight: data.weight || 0,
+            status: 'PENDING_INSPECTION'
+          }
+        });
       }
+
+      return completedRun;
     });
   },
 

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNotificationStore } from '../store/useNotificationStore';
 import {
-  Factory,
   Lock,
   Mail,
   Server,
@@ -48,7 +47,33 @@ export default function LoginPage() {
       });
     }
   };
-
+  const handleQuickRole = async (role) => {
+    // Map roles to mock emails for now, assuming authService handles it or backend has these
+    const roleEmails = {
+      ADMIN: 'admin@textile.local',
+      PRODUCTION_MANAGER: 'production@textile.local',
+      STORE_MANAGER: 'store@textile.local',
+      QUALITY_INSPECTOR: 'quality@textile.local',
+      ACCOUNTANT: 'accountant@textile.local',
+      BUYER: 'buyer@textile.local',
+    };
+    const emailToUse = roleEmails[role] || 'admin@textile.local';
+    const result = await login(emailToUse, 'Admin@123!');
+    if (result.success) {
+      addToast({
+        type: 'success',
+        title: 'Authentication Successful',
+        message: `Signed in as ${role}`,
+      });
+      navigate('/dashboard');
+    } else {
+      addToast({
+        type: 'error',
+        title: 'Sign In Failed',
+        message: result.error || 'Please check your credentials.',
+      });
+    }
+  };
 
   const handlePingServer = async () => {
     setTestingPing(true);
@@ -70,195 +95,196 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-900 text-slate-100">
-      {/* Left side: Brand Showcase */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 border-r border-slate-800">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/30">
-              <Factory className="h-6 w-6" />
+    <div className="flex min-h-screen bg-[#ecf7f9] items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-5xl rounded-3xl bg-white shadow-xl shadow-cyan-950/5 border border-slate-100 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+        {/* Left: Pastel Cyan Showcase Banner */}
+        <div className="lg:col-span-5 bg-gradient-to-br from-[#00bcd4] via-[#00acc1] to-[#0097a7] p-8 sm:p-10 text-white flex flex-col justify-between">
+          <div>
+            {/* Avatar / Brand Icon */}
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 shadow-inner backdrop-blur-xs ring-2 ring-white/40 mb-6">
+              <span className="text-2xl font-black text-amber-300">🏭</span>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">EVEREST TEXTILE MILLS</h1>
-              <p className="text-xs uppercase tracking-widest text-blue-400 font-medium">
-                Integrated Manufacturing ERP System
+
+            <span className="rounded-full bg-white/25 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
+              Everest Textile Mills
+            </span>
+            <h1 className="text-3xl font-black tracking-tight text-white mt-3 leading-snug">
+              Smart Textile Manufacturing ERP
+            </h1>
+            <p className="text-xs text-cyan-50 mt-2 leading-relaxed">
+              Unified software platform replacing notebooks and phone calls across Spinning, Weaving, Dyeing, Quality Control, and Dispatch.
+            </p>
+          </div>
+
+          <div className="mt-8 space-y-3">
+            <div className="rounded-2xl bg-white/15 p-3.5 backdrop-blur-xs text-xs">
+              <span className="font-bold text-amber-200 block">End-to-End Traceability</span>
+              <p className="text-[11px] text-cyan-50 mt-0.5">
+                Roll R-102 ➔ Order ORD-25 ➔ Machine W-07 ➔ Operator O-15 defect audit.
               </p>
             </div>
-          </div>
 
-          <div className="mt-12 space-y-4">
-            <h2 className="text-3xl font-extrabold text-white leading-tight">
-              One Unified Software Platform to Replace Notebooks & Phone Calls.
-            </h2>
-            <p className="text-slate-400 text-sm leading-relaxed max-w-lg">
-              Manage the complete textile lifecycle from raw yarn receiving, spinning, airjet weaving, and vat dyeing,
-              to quality inspection, defect traceability, warehouse dispatch, and real-time order costing.
-            </p>
-          </div>
-        </div>
-
-        {/* Feature Highlights Grid */}
-        <div className="grid grid-cols-2 gap-4 my-8">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <div className="flex items-center gap-2 text-blue-400 text-xs font-semibold uppercase">
-              <Sparkles className="h-4 w-4" />
-              <span>End-to-End Traceability</span>
-            </div>
-            <p className="mt-1 text-xs text-slate-300">
-              Roll R-102 → Order ORD-25 → Machine W-07 → Operator O-15 defect audit.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold uppercase">
-              <CheckCircle2 className="h-4 w-4" />
-              <span>Quality Control Rule</span>
-            </div>
-            <p className="mt-1 text-xs text-slate-300">
-              Strict business constraint: rolls failing inspection cannot be dispatched.
-            </p>
-          </div>
-        </div>
-
-        {/* Backend Target Indicator */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Server className="h-4 w-4 text-blue-400" />
-              <span className="text-xs font-semibold text-slate-300">Target Backend API</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span
-                className={`h-2.5 w-2.5 rounded-full ${
-                  isServerOnline ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
-                }`}
-              />
-              <span className="text-xs font-medium text-slate-400">
-                {isServerOnline ? `Online (${serverLatency}ms)` : 'Offline Fallback'}
+            {/* Target Server info */}
+            <div className="rounded-2xl bg-white/10 p-3 text-xs flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Server className="h-4 w-4 text-cyan-100" />
+                <span className="font-mono text-[11px] text-cyan-100">{currentApiUrl.includes('172.17') ? '172.17.40.17' : 'localhost:5000'}</span>
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isServerOnline ? 'bg-emerald-400 text-emerald-950' : 'bg-amber-300 text-amber-950'}`}>
+                {isServerOnline ? 'Online' : 'Demo Fallback'}
               </span>
             </div>
           </div>
-          <p className="mt-1.5 font-mono text-xs text-blue-300">{currentApiUrl}</p>
         </div>
-      </div>
 
-      {/* Right side: Login Form & Role Quick Launch */}
-      <div className="flex flex-1 flex-col justify-center px-6 py-12 lg:px-16 bg-slate-900">
-        <div className="mx-auto w-full max-w-md">
-          {/* Mobile Header */}
-          <div className="lg:hidden flex items-center gap-2.5 mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white">
-              <Factory className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">EVEREST TEXTILE MILLS</h2>
-              <p className="text-[11px] text-blue-400">Textile Manufacturing ERP</p>
-            </div>
-          </div>
-
+        {/* Right: Clean White Login & 1-Click Test Personas */}
+        <div className="lg:col-span-7 p-8 sm:p-10 flex flex-col justify-between">
           <div>
-            <h3 className="text-2xl font-bold tracking-tight text-white">Sign In to Mill Portal</h3>
-            <p className="mt-1.5 text-xs text-slate-400">
-              Access floor management, raw materials, looms, QA, or buyer portal.
-            </p>
-          </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-black text-slate-800">Welcome Back</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Sign in to access your mill floor workspace</p>
+              </div>
 
-          {/* Server status pill + quick switcher */}
-          <div className="mt-5 flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 px-3.5 py-2.5">
-            <div className="flex items-center gap-2">
-              <span
-                className={`h-2.5 w-2.5 rounded-full ${
-                  isServerOnline ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
-                }`}
-              />
-              <span className="text-xs font-medium text-slate-300">
-                {isServerOnline ? 'Backend Connected' : 'Demo Fallback Ready'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
+              {/* Server toggle */}
               <button
                 type="button"
                 onClick={() => setApiUrl(currentApiUrl.includes('localhost') ? 'http://172.17.40.17:5000/api' : 'http://localhost:5000/api')}
-                className="text-[11px] font-medium text-blue-400 hover:text-blue-300 hover:underline"
+                className="text-[11px] font-semibold text-[#00acc1] hover:underline"
               >
                 Switch to {currentApiUrl.includes('localhost') ? '172.17.40.17' : 'localhost'}
               </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              {error && (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+                  {error}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600">Email Address</label>
+                <div className="relative mt-1">
+                  <Mail className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="admin@textile.local"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2.5 text-xs text-slate-800 focus:border-[#00bcd4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#00bcd4]/20 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600">Password</label>
+                <div className="relative mt-1">
+                  <Lock className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="••••••••••••"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2.5 text-xs text-slate-800 focus:border-[#00bcd4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#00bcd4]/20 transition-all"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full rounded-full bg-[#00bcd4] hover:bg-[#00acc1] py-2.5 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <span>Verifying Credentials...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign In (Owner / Admin)</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+
+          {/* 1-Click Reviewer Logins */}
+          <div className="mt-8 border-t border-slate-100 pt-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                1-Click Reviewer Test Logins
+              </span>
+              <span className="rounded-full bg-cyan-100 px-2 py-0.5 text-[9px] font-bold text-[#00acc1]">
+                Instant Access
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
               <button
                 type="button"
-                onClick={handlePingServer}
-                disabled={testingPing}
-                title="Ping server"
-                className="rounded p-1 text-slate-400 hover:text-white"
+                onClick={() => handleQuickRole('ADMIN')}
+                className="rounded-2xl border border-slate-100 bg-slate-50 p-2.5 hover:border-[#00bcd4] hover:bg-cyan-50/50 text-left transition-all"
               >
-                <RefreshCw className={`h-3.5 w-3.5 ${testingPing ? 'animate-spin' : ''}`} />
+                <div className="font-bold text-slate-800 text-[11px]">Admin / Owner</div>
+                <div className="text-[10px] text-slate-400">Full Mill Access</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickRole('PRODUCTION_MANAGER')}
+                className="rounded-2xl border border-slate-100 bg-slate-50 p-2.5 hover:border-[#00bcd4] hover:bg-cyan-50/50 text-left transition-all"
+              >
+                <div className="font-bold text-slate-800 text-[11px]">Production Mgr</div>
+                <div className="text-[10px] text-slate-400">Looms & Floor</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickRole('STORE_MANAGER')}
+                className="rounded-2xl border border-slate-100 bg-slate-50 p-2.5 hover:border-[#00bcd4] hover:bg-cyan-50/50 text-left transition-all"
+              >
+                <div className="font-bold text-slate-800 text-[11px]">Store Manager</div>
+                <div className="text-[10px] text-slate-400">Yarn & Warehouse</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickRole('QUALITY_INSPECTOR')}
+                className="rounded-2xl border border-slate-100 bg-slate-50 p-2.5 hover:border-[#00bcd4] hover:bg-cyan-50/50 text-left transition-all"
+              >
+                <div className="font-bold text-slate-800 text-[11px]">Quality Inspector</div>
+                <div className="text-[10px] text-slate-400">Rolls & Defects</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickRole('ACCOUNTANT')}
+                className="rounded-2xl border border-slate-100 bg-slate-50 p-2.5 hover:border-[#00bcd4] hover:bg-cyan-50/50 text-left transition-all"
+              >
+                <div className="font-bold text-slate-800 text-[11px]">Accountant</div>
+                <div className="text-[10px] text-slate-400">Cost & Wages</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickRole('BUYER')}
+                className="rounded-2xl border border-slate-100 bg-slate-50 p-2.5 hover:border-[#00bcd4] hover:bg-cyan-50/50 text-left transition-all"
+              >
+                <div className="font-bold text-slate-800 text-[11px]">Buyer Portal</div>
+                <div className="text-[10px] text-slate-400">Track ORD-1024</div>
               </button>
             </div>
           </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            {error && (
-              <div className="rounded-xl border border-rose-800/40 bg-rose-950/40 p-3 text-xs text-rose-300">
-                {error}
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300">Email Address</label>
-              <div className="relative mt-1.5">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
-                  <Mail className="h-4 w-4" />
-                </div>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  placeholder="admin@textile.local"
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950/80 pl-9 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300">Password</label>
-              <div className="relative mt-1.5">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
-                  <Lock className="h-4 w-4" />
-                </div>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="••••••••••••"
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950/80 pl-9 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500 focus:outline-none transition-all disabled:opacity-50"
-            >
-              {isLoading ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  <span>Authenticating...</span>
-                </>
-              ) : (
-                <>
-                  <span>Sign In (Owner / Admin)</span>
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </button>
-          </form>
-
-
         </div>
       </div>
     </div>
   );
 }
+
+
+

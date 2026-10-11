@@ -1,10 +1,8 @@
 import request from 'supertest';
 import app from '../src/app.js';
-import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
 import { createReservation } from '../src/modules/inventory/inventory.service.js';
-
-const prisma = new PrismaClient();
+import prisma from '../src/config/db.js';
 
 describe('Inventory Reservations & Concurrency', () => {
   let warehouse;
@@ -12,30 +10,42 @@ describe('Inventory Reservations & Concurrency', () => {
   let adminId;
 
   beforeAll(async () => {
-    const role = await prisma.role.findFirst({ where: { name: 'SUPER_ADMIN' } });
-    const user = await prisma.user.upsert({
-      where: { email: 'inv@test.local' },
-      update: { isActive: true },
-      create: {
-        email: 'inv@test.local',
-        name: 'Inv Admin',
-        passwordHash: 'dummy',
-        roles: { create: { roleId: role.id } }
-      }
-    });
-    adminId = user.id;
+    const role = await prisma.role.findFirst({ where: { name: 'ADMIN' } });
+    if (role) {
+      const user = await prisma.user.upsert({
+        where: { email: 'inv@test.local' },
+        update: { isActive: true },
+        create: {
+          email: 'inv@test.local',
+          name: 'Inv Admin',
+          passwordHash: 'dummy',
+          roles: { create: { roleId: role.id } }
+        }
+      });
+      adminId = user.id;
+    } else {
+      const user = await prisma.user.findFirst();
+      adminId = user.id;
+    }
 
-    warehouse = await prisma.warehouse.findFirst();
-    item = await prisma.item.findFirst();
+    item = await prisma.item.findFirst({ where: { balances: { some: {} } } });
+    warehouse = await prisma.warehouse.findFirst({
+      where: { balances: { some: { itemId: item.id } } }
+    });
     
     // Reset or seed a specific balance for the test
-    const batch = await prisma.inventoryBatch.findFirst({ where: { itemId: item.id } });
-    if (batch) {
-        await prisma.inventoryBalance.upsert({
-          where: { itemId_warehouseId_batchId: { itemId: item.id, warehouseId: warehouse.id, batchId: batch.id } },
-          update: { quantity: 50, reservedQuantity: 0 },
-          create: { itemId: item.id, warehouseId: warehouse.id, batchId: batch.id, quantity: 50, reservedQuantity: 0 }
-        });
+    const existing = await prisma.inventoryBalance.findFirst({
+      where: { itemId: item.id, warehouseId: warehouse.id }
+    });
+    if (existing) {
+      await prisma.inventoryBalance.update({
+        where: { id: existing.id },
+        data: { quantity: 50, reservedQuantity: 0 }
+      });
+    } else {
+      await prisma.inventoryBalance.create({
+        data: { itemId: item.id, warehouseId: warehouse.id, quantity: 50, reservedQuantity: 0 }
+      });
     }
   });
 
@@ -45,9 +55,9 @@ describe('Inventory Reservations & Concurrency', () => {
     // The third reservation should fail due to our strict `quantity: { gte: reservedQuantity + newQty }` lock.
     
     const reservationPromises = [
-      createReservation({ itemId: item.id, warehouseId: warehouse.id, quantity: 20 }, adminId),
-      createReservation({ itemId: item.id, warehouseId: warehouse.id, quantity: 20 }, adminId),
-      createReservation({ itemId: item.id, warehouseId: warehouse.id, quantity: 20 }, adminId)
+      createReservation({ itemId: item.id, warehouseId: warehouse.id, quantity: 20, productionJobId: 'dummy-job' }, adminId),
+      createReservation({ itemId: item.id, warehouseId: warehouse.id, quantity: 20, productionJobId: 'dummy-job' }, adminId),
+      createReservation({ itemId: item.id, warehouseId: warehouse.id, quantity: 20, productionJobId: 'dummy-job' }, adminId)
     ];
 
     const results = await Promise.allSettled(reservationPromises);

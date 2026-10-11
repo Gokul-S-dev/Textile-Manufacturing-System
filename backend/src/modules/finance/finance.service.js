@@ -9,6 +9,28 @@ export const financeService = {
   async createInvoice(data, userId) {
     const { lines, ...invoiceData } = data;
 
+    if (!Array.isArray(lines) || lines.length === 0) {
+      throw createError(400, 'At least one invoice line is required');
+    }
+
+    const invalidLine = lines.find(
+      (line) => Number(line.quantity) <= 0 || Number(line.unitPrice) < 0 || !line.itemId
+    );
+    if (invalidLine) {
+      throw createError(400, 'Invoice lines require a valid item, positive quantity, and non-negative unit price');
+    }
+
+    const itemIds = [...new Set(lines.map((line) => line.itemId))];
+    const existingItems = await prisma.item.findMany({
+      where: { id: { in: itemIds } },
+      select: { id: true },
+    });
+    const existingItemIds = new Set(existingItems.map((item) => item.id));
+    const missingItemId = itemIds.find((itemId) => !existingItemIds.has(itemId));
+    if (missingItemId) {
+      throw createError(400, `Invoice item ${missingItemId} does not exist`);
+    }
+
     let subtotal = 0;
     let taxTotal = 0;
     

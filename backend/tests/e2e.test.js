@@ -27,10 +27,10 @@ beforeAll(async () => {
     }
   });
 
-  // Since we bypass login, we create the token directly with SUPER_ADMIN privileges
+  // Since we bypass login, we create the token directly with ADMIN privileges
   const payload = {
     userId: user.id,
-    roles: ['SUPER_ADMIN'], // The authorization middleware checks against roles inside the JWT
+    roles: ['ADMIN'], // The authorization middleware checks against roles inside the JWT
     permissions: []
   };
   token = jwt.sign(payload, env.JWT_SECRET || 'supersecret', { expiresIn: '15m' });

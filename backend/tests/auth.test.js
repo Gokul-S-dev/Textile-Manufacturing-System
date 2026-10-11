@@ -1,9 +1,7 @@
 import request from 'supertest';
 import app from '../src/app.js';
-import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
-
-const prisma = new PrismaClient();
+import prisma from '../src/config/db.js';
 
 describe('Auth & User Management', () => {
   let adminTokens;
@@ -11,8 +9,8 @@ describe('Auth & User Management', () => {
 
   beforeAll(async () => {
     // Setup test user
-    const passwordHash = await argon2.hash('password123');
-    const role = await prisma.role.findFirst({ where: { name: 'SUPER_ADMIN' } });
+    const passwordHash = await argon2.hash('Admin@123!');
+    const role = await prisma.role.findFirst({ where: { name: 'ADMIN' } });
     
     testUser = await prisma.user.upsert({
       where: { email: 'testadmin@textile.local' },
@@ -38,7 +36,7 @@ describe('Auth & User Management', () => {
   it('should login successfully and return tokens', async () => {
     const res = await request(app).post('/api/v1/auth/login').send({
       email: 'testadmin@textile.local',
-      password: 'password123'
+      password: 'Admin@123!'
     });
     
     expect(res.statusCode).toBe(200);

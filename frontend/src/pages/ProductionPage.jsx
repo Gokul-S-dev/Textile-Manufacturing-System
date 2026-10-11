@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useOrderStore } from '../store/useOrderStore';
 import { useNotificationStore } from '../store/useNotificationStore';
 import { useAuditStore } from '../store/useAuditStore';
@@ -7,26 +7,25 @@ import Modal from '../components/Modal';
 import {
   Cpu,
   Clock,
-  Play,
-  CheckCircle,
-  AlertCircle,
   Cog,
   User,
-  ArrowRight,
-  TrendingUp,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function ProductionPage() {
-  const { orders, updateProductionProgress, updateOrderStatus } = useOrderStore();
+  const { orders, fetchOrders, updateProductionProgress } = useOrderStore();
   const { addToast } = useNotificationStore();
   const { addLog } = useAuditStore();
 
   const [activeStageTab, setActiveStageTab] = useState('ALL');
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
   const [progressModalOrder, setProgressModalOrder] = useState(null);
   const [incrementMeters, setIncrementMeters] = useState(250);
 
-  // Filter only orders in production
   const inProductionOrders = orders.filter((o) => o.status === 'IN_PRODUCTION');
 
   const filteredOrders = inProductionOrders.filter((o) => {
@@ -62,27 +61,31 @@ export default function ProductionPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 max-w-[1600px] mx-auto">
+      {/* Header */}
+      <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-sm border border-slate-100/80 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Factory Floor Production Tracking
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-[#00bcd4] animate-ping" />
+            <span className="rounded-full bg-cyan-100/70 px-2.5 py-0.5 text-[11px] font-extrabold text-[#00acc1]">
+              Floor Production
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-800 mt-2">
+            Production Stage Floor Tracking
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-400 mt-1 max-w-xl">
             Live telemetry of active production runs across Spinning, Airjet Weaving, and Vat Dyeing.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link
-            to="/machines"
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm"
-          >
-            <Cog className="h-4 w-4 text-slate-500" />
-            <span>Floor Machine Status</span>
-          </Link>
-        </div>
+        <Link
+          to="/machines"
+          className="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-1.5 self-start md:self-auto"
+        >
+          <Cog className="h-4 w-4" />
+          <span>Floor Machine Status</span>
+        </Link>
       </div>
 
       {/* Stage Selector Pills */}
@@ -108,16 +111,16 @@ export default function ProductionPage() {
           <button
             key={tab.key}
             onClick={() => setActiveStageTab(tab.key)}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
+            className={`flex items-center gap-2 rounded-full px-5 py-2 text-xs font-extrabold transition-all shadow-xs ${
               activeStageTab === tab.key
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                ? 'bg-[#00bcd4] text-white shadow-cyan-500/20'
+                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-100'
             }`}
           >
             <span>{tab.label}</span>
             <span
               className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
-                activeStageTab === tab.key ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600'
+                activeStageTab === tab.key ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-600'
               }`}
             >
               {tab.count}
@@ -137,91 +140,85 @@ export default function ProductionPage() {
           return (
             <div
               key={job.id}
-              className="rounded-2xl bg-white border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
+              className="rounded-3xl bg-white border border-slate-100 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
             >
               <div>
-                {/* Header */}
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-sm text-slate-900">{job.orderNumber}</span>
-                      <span className="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                      <span className="font-black text-sm text-slate-900">{job.orderNumber}</span>
+                      <span className="rounded-full bg-cyan-100 px-2.5 py-0.5 text-[10px] font-extrabold text-[#00acc1]">
                         {job.stage || 'Weaving'}
                       </span>
                     </div>
-                    <p className="text-xs font-semibold text-slate-800 mt-1">{job.buyerName}</p>
+                    <p className="text-xs font-extrabold text-slate-700 mt-1">{job.buyerName}</p>
                   </div>
                   <Badge status={job.priority} />
                 </div>
 
-                {/* Fabric Info */}
-                <div className="mt-3 rounded-xl bg-slate-50 p-3 text-xs space-y-1">
+                <div className="mt-4 rounded-2xl bg-slate-50/70 p-3 text-xs space-y-1">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Fabric:</span>
-                    <span className="font-medium text-slate-800 truncate max-w-[170px]">{job.fabricType}</span>
+                    <span className="text-slate-400">Fabric:</span>
+                    <span className="font-bold text-slate-800 truncate max-w-[170px]">{job.fabricType}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Colour:</span>
-                    <span className="font-medium text-slate-800">{job.colour}</span>
+                    <span className="text-slate-400">Colour:</span>
+                    <span className="font-bold text-slate-800">{job.colour}</span>
                   </div>
                 </div>
 
-                {/* Machine & Operator */}
-                <div className="mt-3 space-y-1.5 text-xs">
+                <div className="mt-3.5 space-y-1.5 text-xs">
                   <div className="flex items-center gap-2 text-slate-700">
-                    <Cog className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                    <span className="font-semibold">{job.assignedMachineName || 'Loom Floor'}</span>
+                    <Cog className="h-3.5 w-3.5 text-[#00bcd4] shrink-0" />
+                    <span className="font-bold">{job.assignedMachineName || 'Loom Floor'}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-600">
+                  <div className="flex items-center gap-2 text-slate-500">
                     <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                     <span>{job.assignedWorkerName || 'Floor Pool'}</span>
                   </div>
                 </div>
 
-                {/* Progress Bar */}
                 <div className="mt-4">
-                  <div className="flex justify-between text-xs font-medium mb-1">
-                    <span className="text-slate-900 font-bold">{produced.toLocaleString()} M Produced</span>
-                    <span className="text-slate-500">{remaining.toLocaleString()} M Left ({progressPct}%)</span>
+                  <div className="flex justify-between text-xs font-semibold mb-1">
+                    <span className="text-slate-800 font-bold">{produced.toLocaleString()} M</span>
+                    <span className="text-[#00acc1] font-bold">{progressPct}%</span>
                   </div>
                   <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-300 ${
-                        progressPct >= 100 ? 'bg-emerald-500' : 'bg-blue-600'
+                        progressPct >= 100 ? 'bg-emerald-500' : 'bg-[#00bcd4]'
                       }`}
                       style={{ width: `${progressPct}%` }}
                     />
                   </div>
                 </div>
 
-                {/* Timing */}
-                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] text-slate-500">
+                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] text-slate-400">
                   <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3 text-slate-400" />
+                    <Clock className="h-3 w-3" />
                     <span>Started: 2026-10-09</span>
                   </div>
-                  <div className="font-semibold text-slate-700">Deadline: {job.deadline}</div>
+                  <div className="font-bold text-slate-700">Deadline: {job.deadline}</div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3">
                 <button
                   onClick={() => {
                     setProgressModalOrder(job);
                     setIncrementMeters(250);
                   }}
-                  className="flex-1 rounded-xl bg-blue-50 py-2 text-center text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                  className="flex-1 rounded-full bg-cyan-50 py-2 text-center text-xs font-bold text-[#00acc1] hover:bg-cyan-100 transition-colors"
                 >
-                  + Log Production Output
+                  + Log Production
                 </button>
 
                 {job.orderNumber === 'ORD-25' && (
                   <Link
                     to="/traceability"
-                    className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                    className="rounded-full bg-rose-50 px-3.5 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100"
                   >
-                    Trace R-102
+                    Trace
                   </Link>
                 )}
               </div>
@@ -230,7 +227,7 @@ export default function ProductionPage() {
         })}
       </div>
 
-      {/* Increment Output Modal */}
+      {/* Output Increment Modal */}
       {progressModalOrder && (
         <Modal
           isOpen={!!progressModalOrder}
@@ -243,8 +240,8 @@ export default function ProductionPage() {
                 Order: <strong className="text-slate-900">{progressModalOrder.buyerName}</strong> (
                 {progressModalOrder.fabricType})
               </p>
-              <label className="block text-xs font-semibold text-slate-700">
-                Additional Meters Produced on Machine Today *
+              <label className="block text-xs font-bold text-slate-700">
+                Additional Meters Produced Today *
               </label>
               <input
                 type="number"
@@ -252,26 +249,23 @@ export default function ProductionPage() {
                 min="10"
                 value={incrementMeters}
                 onChange={(e) => setIncrementMeters(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs focus:border-blue-500 focus:outline-none"
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-[#00bcd4] focus:outline-none font-bold"
               />
-              <p className="text-[11px] text-slate-500 mt-1">
-                Currently produced: {progressModalOrder.producedMeters} / {progressModalOrder.quantityMeters} M.
-              </p>
             </div>
 
             <div className="flex justify-end gap-2 border-t pt-4">
               <button
                 type="button"
                 onClick={() => setProgressModalOrder(null)}
-                className="rounded-xl border px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                className="rounded-full border px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500 shadow"
+                className="rounded-full bg-[#00bcd4] hover:bg-[#00acc1] px-5 py-2 text-xs font-extrabold text-white shadow"
               >
-                Record Output & Advance Loom
+                Save Output
               </button>
             </div>
           </form>
@@ -280,3 +274,5 @@ export default function ProductionPage() {
     </div>
   );
 }
+
+

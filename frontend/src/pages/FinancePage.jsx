@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { DollarSign, FileText, Activity, CheckCircle, Clock } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 
@@ -14,9 +14,7 @@ const FinancePage = () => {
 
   const fetchInvoices = async () => {
     try {
-      const res = await axios.get('http://192.168.137.1:5000/api/v1/finance/invoices', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await api.get('/finance/invoices');
       setInvoices(res.data);
     } catch (err) {
       setError('Failed to fetch invoices');
@@ -27,9 +25,7 @@ const FinancePage = () => {
 
   const approveInvoice = async (id) => {
     try {
-      await axios.post(`http://192.168.137.1:5000/api/v1/finance/invoices/${id}/approve`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      await api.post(`/finance/invoices/${id}/approve`, {});
       fetchInvoices();
     } catch (err) {
       alert('Failed to approve invoice: ' + (err.response?.data?.message || err.message));
@@ -88,12 +84,12 @@ const FinancePage = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{inv.invoiceNumber}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{inv.customer?.name || 'Unknown'}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={\`px-2 inline-flex text-xs leading-5 font-semibold rounded-full \${
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                     inv.status === 'DRAFT' ? 'bg-gray-100 text-gray-800' :
                     inv.status === 'APPROVED' ? 'bg-blue-100 text-blue-800' :
                     inv.status === 'PAID' ? 'bg-green-100 text-green-800' :
                     'bg-yellow-100 text-yellow-800'
-                  }\`}>
+                  }`}>
                     {inv.status}
                   </span>
                 </td>
@@ -124,3 +120,5 @@ const FinancePage = () => {
 };
 
 export default FinancePage;
+
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { PlayIcon, PauseIcon, CheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import api from '../services/api';
+import { Play as PlayIcon, Pause as PauseIcon, Check as CheckIcon, AlertTriangle as ExclamationTriangleIcon } from 'lucide-react';
 
 export default function MesExecutionPage() {
   const [orders, setOrders] = useState([]);
@@ -13,7 +13,7 @@ export default function MesExecutionPage() {
   const fetchOrders = async () => {
     try {
       // Dummy proxy for the API call (use axios setup normally)
-      const { data } = await axios.get('/api/v1/mes/orders', { withCredentials: true });
+      const { data } = await api.get('/mes/orders');
       setOrders(data);
     } catch (error) {
       console.error('Failed to fetch MES orders', error);
@@ -24,7 +24,7 @@ export default function MesExecutionPage() {
 
   const handleStartOrder = async (orderId) => {
     try {
-      await axios.post(`/api/v1/mes/orders/${orderId}/start`, {}, { withCredentials: true });
+      await api.post(`/mes/orders/${orderId}/start`);
       fetchOrders();
     } catch (error) {
       alert('Cannot start order: ' + (error.response?.data?.message || error.message));
@@ -96,3 +96,5 @@ export default function MesExecutionPage() {
     </div>
   );
 }
+
+
