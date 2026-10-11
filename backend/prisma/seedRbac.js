@@ -40,7 +40,8 @@ const ROLES_AND_PERMISSIONS = {
       'production.plan', 'production.schedule', 'production.create', 'production.release', 
       'production.commit_schedule', 'production.execute', 'production.override', 'production.read', 
       'machines.manage', 'machines.read', 'machines.status.manage', 'inventory.read', 
-      'inventory.reserve', 'inventory.transfer', 'warehouse.read', 'workforce.assign', 'workforce.read'
+      'inventory.reserve', 'inventory.transfer', 'warehouse.read', 'workforce.assign', 'workforce.read',
+      'analytics.read', 'quality.read', 'sales.read'
     ]
   },
   'STORE_MANAGER': {
@@ -50,7 +51,7 @@ const ROLES_AND_PERMISSIONS = {
     permissions: [
       'inventory.read', 'inventory.receive', 'inventory.transfer', 'inventory.update', 
       'warehouse.read', 'warehouse.manage', 'warehouse.execute', 'warehouse.approve', 
-      'purchasing.read', 'sales.read', 'sales.execute'
+      'purchasing.read', 'sales.read', 'sales.execute', 'analytics.read', 'machines.read', 'production.read'
     ]
   },
   'QUALITY_INSPECTOR': {
@@ -58,7 +59,8 @@ const ROLES_AND_PERMISSIONS = {
     description: 'Quality Control Inspector - Rolls & Defects',
     email: 'quality@textile.local',
     permissions: [
-      'quality.read', 'quality.execute', 'quality.manage', 'quality.approve', 'production.read'
+      'quality.read', 'quality.execute', 'quality.manage', 'quality.approve', 'production.read',
+      'analytics.read', 'machines.read', 'inventory.read', 'sales.read'
     ]
   },
   'ACCOUNTANT': {

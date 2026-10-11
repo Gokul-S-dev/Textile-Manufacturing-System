@@ -40,8 +40,16 @@ export default function DashboardPage() {
 
     analyticsService
       .getExecutiveMetrics()
-      .then(setExecutiveMetrics)
-      .catch((error) => setAnalyticsError(error.message || 'Executive analytics are unavailable.'));
+      .then((data) => {
+        setExecutiveMetrics(data);
+        setAnalyticsError(null);
+      })
+      .catch((error) => {
+        console.warn('Executive analytics fetch notice:', error.message);
+        if (!error.message?.toLowerCase().includes('permissions')) {
+          setAnalyticsError(error.message || 'Executive analytics temporarily unavailable.');
+        }
+      });
   }, []);
 
   const [activeCalendarMonth, setActiveCalendarMonth] = useState('October 2026');
